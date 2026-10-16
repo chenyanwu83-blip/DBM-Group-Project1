@@ -11,8 +11,10 @@
 --    Listing 17，仅清理了 PDF 排版空格，语义与官方完全一致），
 --    永不修改；扩展表一律追加到第 3 节扩展区。
 --
--- ⚠️ 版本要求：MySQL 8.0+（utf8mb4_0900_ai_ci 排序规则为 8.0 特有，
---    若报 Unknown collation 说明服务器是 5.7，需先升级）
+-- ⚠️ 版本策略：不强制升级，以组内登记的最低版本为兼容基线
+--    （见 01_docs/env_record.md）。collation 用 utf8mb4_general_ci，
+--    全版本通用。若基线低于 8.0：CHECK 约束会被静默忽略（不报错，
+--    不影响跑通）；查询避免窗口函数/CTE，改用 JOIN/子查询写法。
 -- 维护：C（实现与平台负责人），改动须 commit 到 GitHub
 -- ============================================================
 
@@ -20,7 +22,7 @@
 DROP DATABASE IF EXISTS ride_hailing;
 CREATE DATABASE ride_hailing
   CHARACTER SET utf8mb4
-  COLLATE utf8mb4_0900_ai_ci;
+  COLLATE utf8mb4_general_ci;
 USE ride_hailing;
 
 -- ============================================================
