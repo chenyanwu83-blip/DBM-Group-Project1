@@ -14,6 +14,6 @@
 ## 统一约定
 
 - 连接：各自本机 `localhost:3306`，字符集 utf8mb4；端口非 3306 者在备注注明
-- 库名统一（以 `02_sql/build.sql` 中 `CREATE DATABASE` 为准）
+- 库名统一 **`ride_hailing`**（由 `02_sql/build.sql` 创建，与个人其他 schema 隔离）
 - 验证方式：`SELECT VERSION();` 输出截图或复制文本均可，发群里 + 填本表
 - "底座跑通"= 官方 Topic 5 DDL + 3 条查询在本机执行成功（M0 验收项，D 旁站验证 C 的）
