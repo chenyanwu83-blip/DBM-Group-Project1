@@ -9,9 +9,9 @@
 
 ## 协作模式：各自本地 MySQL + GitHub 同步
 
-每人用自己的本地 MySQL 8.0（Workbench 连本机 localhost），**以 GitHub 上的脚本为唯一事实来源**——任何人在任何电脑上用同一份脚本都能重建出一模一样的库。四条纪律：
+每人用自己的本地 MySQL（Workbench 连本机 localhost，版本不强制升级），**以 GitHub 上的脚本为唯一事实来源**——任何人在任何电脑上用同一份脚本都能重建出一模一样的库。四条纪律：
 
-1. **版本统一 8.0.x**：每位组员跑 `SELECT VERSION();` 并登记到 [01_docs/env_record.md](01_docs/env_record.md)（10-17 M0 前完成）。5.7 会静默忽略 CHECK 约束、不支持窗口函数/CTE，必须升级。
+1. **版本登记**：每位组员跑 `SELECT VERSION();` 并登记到 [01_docs/env_record.md](01_docs/env_record.md)（10-17 M0 前完成）。**以组内最低版本为兼容基线**——`build.sql` 与所有查询必须能在每台机器跑通；若基线低于 8.0，注意 CHECK 约束会被静默忽略（不影响跑通）、查询避免窗口函数/CTE（用 JOIN/子查询改写）。
 2. **脚本唯一事实**：改表 = 改 `02_sql/build.sql` = commit（build.sql 仅 C 可改）。禁止在 Workbench 图形界面手工建表/改表而不落脚本，否则各人库结构会悄悄分叉。
 3. **数据同源**：样本数据由 `import_data.py` 固定 seed 生成（依赖版本锁 `requirements.txt`），保证每人数据一致、查询截图数字对得上。
 4. **实验数字同机**：出报告用的实验数据（索引前后/JOIN 对比/并发事务）统一由 D 在自己机器上跑，避免跨机器性能差异导致数字打架。
@@ -59,7 +59,7 @@ git add ... && git commit -m "任务编号: 说明" && git push   # 5. 提交成
 
 | 组件 | 选型 | 说明 |
 |---|---|---|
-| MySQL Server | **8.0.x，各自本地安装** | Workbench 连 localhost；版本登记进 [01_docs/env_record.md](01_docs/env_record.md) |
+| MySQL Server | **各自本地安装，版本不强制升级** | Workbench 连 localhost；版本登记进 [01_docs/env_record.md](01_docs/env_record.md)，脚本以组内最低版本为兼容基线（utf8mb4_general_ci 全版本通用） |
 | 图形客户端 | MySQL Workbench | 人人已有，仅作客户端 |
 | 造数/导数 | Python 3.11 + pandas + SQLAlchemy + faker | 依赖锁 `02_sql/requirements.txt`，固定 seed 跨机一致 |
 | ER 绘制 | draw.io | `.drawio` 源文件入 04_figures/ |
