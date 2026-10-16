@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# 大文件数据不进仓库（放共享盘，source/ 只留说明）
+*.csv
+*.parquet
+*.zip
+
+# 日志与临时文件
+*.log
+*~
