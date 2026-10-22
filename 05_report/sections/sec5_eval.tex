@@ -1,0 +1,28 @@
+% ============================================================
+% §5 Evaluation — D 主笔、C 供数据 · 页数预算 1.5 · 素材 A5/D5/C6
+% 数字关（11-02）检查项：结论句挂的数字与截图/日志逐一对账
+% 实验数字统一由 D 本机产出（协作纪律 4），避免跨机性能差异
+% ============================================================
+\section{Evaluation}
+\label{sec:eval}
+
+\subsection{Workload Profile}
+% TODO(D): A5 负载画像——Top5 高频查询（Q1 对账/Q6 调度/Q3、Q7 报表/Q5 催收）与读写比
+TODO(D): 表。
+
+\subsection{Experiment 1: Index Before/After}
+% TODO(D): 选大表查询，EXPLAIN + 耗时成对截图；对照 G2 靶子（P95 < 200 ms）
+% 候选索引：Trip(status)、Trip(start_time)、扩展通过时 Trip/关联表(zone_id)
+TODO(D): 结果表 + 结论。
+
+\subsection{Experiment 2: JOIN vs Subquery}
+% TODO(D): 同一业务问题两种写法的执行计划对比（如 Q2 NOT EXISTS vs LEFT JOIN ... IS NULL）
+TODO(D): 结果表 + 结论。
+
+\subsection{Experiment 3: Concurrent Transactions}
+% TODO(D): 两会话模拟并发支付，展示丢失更新与隔离级别效果；按 G3（50 TPS 设计余量）加压
+TODO(D): 结果表 + 结论。
+
+\subsection{Results Summary and Goal Recheck}
+% TODO(D): 统一结果表样收尾；每条结论必须挂实验数字，§6 与 §1 目标闭环
+TODO(D): 段落。

@@ -1,0 +1,87 @@
+% ============================================================
+% main.tex — CDS534 小组项目报告 · 封面+目录+合章（仅 E 可改）
+% Topic 5 · Ride-Hailing Order & Trip Dispatch（网约车订单与派单数据库）
+% 编译：Overleaf pdfLaTeX，以无错为准（warning 可留）
+% 硬性要求：正文 10–12 页 · 字号 12 · 封面列组名与全员学号 · ER 矢量
+% 写作约定：05_report/README.md + 01_docs/glossary.md（术语表）
+% 章节页数预算：§1 1.5 / §2 2.0 / §3 1.5 / §4 3.0 / §5 1.5 / §6 0.5–1.0
+% 超页压缩顺序：§4 问答表述 → 截图并排 → ER 图与目标清单不压缩
+% ============================================================
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}      % §5 结果表统一三线表
+\usepackage{listings}      % SQL/脚本排版
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
+
+% ---- 代码样式：等宽 9 号（组内约定）----
+\lstset{
+  basicstyle=\ttfamily\fontsize{9}{11}\selectfont,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  breaklines=true,
+  frame=single,
+  language=SQL,
+  showstringspaces=false,
+  tabsize=2
+}
+
+% ---- 图片：截图统一裁边、同比例缩放；源文件在 03_data/screenshots/ ----
+\graphicspath{{figures/}}
+
+\begin{document}
+
+% ================= 封面 =================
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+  {\LARGE\bfseries Ride-Hailing Order and Trip Dispatch Database\\[0.3em]
+   \large (Topic 5)}\par
+  \vspace{1.5cm}
+  {\large CDS 534 Database Management --- Group Project}\par
+  \vspace{2.5cm}
+  % TODO(胡中远): 组名（kickoff 遗留项，群内确认后回填；文件名 CDS534 Group TeamName.pdf 同步）
+  {\large Group: \textbf{TODO-GroupName}}\par
+  \vspace{1cm}
+  % TODO(胡中远): 全员学号（顺序按角色 A–E，与附录 A 贡献表一致）
+  \begin{tabular}{ll}
+    \textbf{A \middot Business \& Requirements} & TODO 陈祎楠 (SID) \\
+    \textbf{B \middot ER Modelling}             & TODO 张奕杰 (SID) \\
+    \textbf{C \middot Implementation}           & TODO 陈妍吾 (SID) \\
+    \textbf{D \middot Queries \& Experiments}   & TODO 凌彤 (SID) \\
+    \textbf{E \middot PM \& Integration}        & TODO 胡中远 (SID) \\
+  \end{tabular}\par
+  \vfill
+  {\large \today}\par
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ================= 正文（各人只写自己的章节文件）=================
+\input{sections/sec1_context}    % §1 A 主笔、E 润色
+\input{sections/sec2_er}         % §2 B 主笔
+\input{sections/sec3_impl}       % §3 C 主笔
+\input{sections/sec4_sql}        % §4 D 主笔
+\input{sections/sec5_eval}       % §5 D 主笔、C 供数据
+\input{sections/sec6_conclusion} % §6 A+E 合写
+
+% ================= References =================
+% TODO(全员): 正文落笔时用 \cite{...} 替换 \nocite{*}（骨架期先全量展示引用库 v1）
+\nocite{*}
+\bibliographystyle{plain}
+\bibliography{references}
+
+% ================= 附录 =================
+\appendix
+\input{appendix_contribution}   % 附录 A 贡献表（E）
+\input{appendix_sql}            % 附录 B 完整脚本（C 供、E 排版）
+
+\end{document}

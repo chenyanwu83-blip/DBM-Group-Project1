@@ -1,0 +1,24 @@
+% ============================================================
+% §2 Entity-Relationship Model — B 主笔 · 页数预算 2.0 · 素材 B2–B5
+% ER 关（11-02）检查项：官方约定遵循 / 每个扩展实体有业务理由 / 与 §1 目标呼应
+% ============================================================
+\section{Entity-Relationship Model}
+\label{sec:er}
+
+\subsection{Notation and Conventions}
+% TODO(B): 官方约定遵循说明——矩形实体、属性入框、主键斜体、外键以 *id 标注、连线标基数、N:M 拆关联实体
+TODO(B): 段落。
+
+\subsection{Baseline Model: Five Entities}
+% TODO(B): 五实体 ER 矢量图（draw.io 导出 PDF，勿用位图）+ 实体/属性/键说明
+% 关键基数：Passenger–Trip 1:N / Driver–Trip 1:N / Driver–Vehicle N:1（vehicle_id UNIQUE）/ Trip–Payment 1:1（trip_id UNIQUE）
+TODO(B): 图~\ref{fig:er-baseline}。
+
+\subsection{Extensions}
+% TODO(B): B3 表决通过的扩展，每张扩展表写一句业务理由 + 对查询的价值；未通过的方案写一句取舍说明
+% 提示：扩展表 DDL 一律进 build.sql 第 3 节扩展区，底座永不修改（D-07/协作铁律）
+TODO(B): 段落。
+
+\subsection{Normalization}
+% TODO(B): B5 逐表 1NF/2NF/3NF 判定与理由 + 一个传递依赖消除示例（用本项目表举例，供概念题 Q2 复用）
+TODO(B): 段落。

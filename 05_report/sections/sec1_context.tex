@@ -1,0 +1,28 @@
+% ============================================================
+% §1 Business Context and Goals — A 主笔、E 润色 · 页数预算 1.5
+% 素材：A1 业务流程 / A2 利益相关者 / A3 目标与约束 / A4 数据集选型 / A6 CAP 权衡
+% 对应 rubric：Problem framing & significance 4 分 + Methodology 3 分（目标必须带具体数字）
+% ============================================================
+\section{Business Context and Goals}
+\label{sec:context}
+
+\subsection{Background and Business Process}
+% TODO(A): 网约车运作链路（下单→派单→行程→支付→评价），配 A1 业务流程图（draw.io 导出矢量 PDF）
+% 口径提醒：匹配队列不落库（D-05）——"下单量"分析属已知局限，§6 呼应
+% 图：\begin{figure}[ht] \centering \includegraphics[width=0.9\textwidth]{figures/business_flow.pdf}
+%      \caption{Business process of order dispatch and fulfilment} \label{fig:business-flow} \end{figure}
+TODO(A): 段落。
+
+\subsection{Stakeholders and Their Data Needs}
+% TODO(A): A2 五方×2 条（乘客/司机/运营/财务/客服）压缩为一张 booktabs 表，标注每条需求对应的数据来源表
+TODO(A): 表~\ref{tab:stakeholders}。
+
+\subsection{Quantified Goals, Constraints and Trade-offs}
+% TODO(A): A3 的 G1–G5 / C1–C6 摘要（P95<200ms、50 TPS、180 天保留、Trip ≥ 50,000 等；数字以全组表决定稿为准）
+% TODO(A): A6 一致性/可用性/延迟权衡——派单与支付为何强一致（转账类比），报表可弱一致（读库/缓存）
+TODO(A): 段落。
+
+\subsection{Dataset Selection Rationale}
+% TODO(A): A4 结论——生成器路线（faker + 固定 seed，分布参照 NYC TLC），样本规模见 A4 第三节
+% 引用 \cite{tlctripdata}；TLC 字段适配一票否决论证压缩为 2–3 句（缺乘客身份/司机-车辆 1:1 源字段）
+TODO(A): 段落。
