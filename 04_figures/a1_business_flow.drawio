@@ -1,0 +1,97 @@
+<mxfile host="app.diagrams.net" version="24.7.8">
+  <diagram id="a1-business-flow" name="A1业务流程草图">
+    <mxGraphModel dx="1000" dy="700" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="1060" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="A1 · 网约车业务流程草图 v1.3（下单 → 派单 → 行程 → 支付 →（评价）· 三段式取消计费）" style="text;html=1;fontSize=16;fontStyle=1;align=center;" vertex="1" parent="1">
+          <mxGeometry x="120" y="20" width="660" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="P" value="乘客发起叫车请求" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="330" y="70" width="180" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="Q" value="应用层：进入匹配队列&lt;br&gt;（不落库，决策 D-05）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e6;strokeColor=#9673a6;" vertex="1" parent="1">
+          <mxGeometry x="310" y="150" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="M" value="平台匹配司机" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="345" y="240" width="150" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="X0" value="订单作废（不入库）&lt;br&gt;匹配失败或乘客取消" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="630" y="245" width="200" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="A" value="INSERT Trip：status = 'accepted'&lt;br&gt;psg_id、driver_id 写入&lt;br&gt;start_time 默认写入（= 派单时刻）&lt;br&gt;司机绑定唯一 vehicle_id&lt;br&gt;（不换司机由应用层保证）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="290" y="360" width="260" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="X1a" value="Trip.status = 'canceled'（宽限期内取消）&lt;br&gt;免费：无 fare、无 Payment" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="630" y="430" width="220" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="X1b" value="Trip.status = 'canceled'（超宽限期取消）&lt;br&gt;fare = 取消费（课程简化 ¥8）&lt;br&gt;生成 Payment：amount = 取消费" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;" vertex="1" parent="1">
+          <mxGeometry x="630" y="525" width="220" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="S" value="乘客上车，行程进行中&lt;br&gt;status = 'en_route'（取消与完成的分界）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="520" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="C" value="行程结束 status = 'completed'&lt;br&gt;（含乘客中途提前结束）&lt;br&gt;fare 按实际里程/时长结算" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+          <mxGeometry x="300" y="620" width="240" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="RT" value="评价（可选扩展实体，B 表决是否采用）&lt;br&gt;挂在行程完成后，与支付结果无关" style="rounded=1;whiteSpace=wrap;html=1;dashed=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="620" y="628" width="240" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="PY" value="生成支付 Payment&lt;br&gt;amount（CHECK ≥ 0）、method&lt;br&gt;trip_id UNIQUE → 每行程至多一笔&lt;br&gt;（正常车费与取消费共用通道）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="300" y="730" width="240" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="F" value="闭环：Trip : Payment = 1:1" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+          <mxGeometry x="330" y="850" width="180" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="U" value="completed 但无 Payment 行&lt;br&gt;（官方 Q2 反连接可查出 → 对账催收）" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+          <mxGeometry x="630" y="845" width="220" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="图例：蓝 = Trip 落库节点｜绿 = Payment/正常闭环｜黄 = 判断｜红 = 取消（作废 / 宽限期免费取消 / 超宽限期收取消费）｜橙 = 挂起/待对账｜紫 = 应用层（不落库）｜灰虚线 = 可选扩展" style="text;html=1;fontSize=11;align=left;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="60" y="925" width="800" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="note1" value="决策 D-05（Trip 入库时点）：官方 DDL 不变（driver_id NOT NULL），Trip 于派单成功时才 INSERT；下单/匹配在应用层。匹配阶段取消不落库 = 已知取舍。" style="text;html=1;fontSize=11;align=left;fontColor=#9673A6;" vertex="1" parent="1">
+          <mxGeometry x="60" y="955" width="800" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="note2" value="决策 D-06（三段式取消计费，口径参照 help.uber.com 官方条目）：① 接单后宽限期内取消 → canceled，免费（宽限期因城市而异，本文取 3 分钟为课程简化值）；② 超宽限期取消（含司机到达后乘客未现）→ canceled，fare=取消费（补偿司机接驾空驶 *&quot;pay drivers for the time and effort they spend getting to your location&quot;*，金额因城市/产品而异，本文取 ¥8 简化），生成 Payment；接驾异常迟缓可豁免；③ 上车（en_route）后提前结束 → completed，按实际里程/时长计费。&quot;canceled 无 Payment&quot; 旧口径作废。" style="text;html=1;fontSize=11;align=left;fontColor=#b85450;" vertex="1" parent="1">
+          <mxGeometry x="60" y="985" width="800" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="P" target="Q">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="Q" target="M">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" value="无人接单 / 乘客取消" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="M" target="X0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" value="司机接单" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="M" target="A">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" value="宽限期内取消（≈3 分钟）" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="A" target="X1a">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" value="接驾途中 / 到达后取消（含未现）" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="A" target="X1b">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" value="乘客上车" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="A" target="S">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" value="到达终点 / 中途提前结束" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="S" target="C">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" value="（可选）" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;fontSize=11;" edge="1" parent="1" source="C" target="RT">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e10" style="edgeStyle=orthogonalEdgeStyle;html=1;" edge="1" parent="1" source="C" target="PY">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e11" value="支付成功" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="PY" target="F">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" value="支付失败 / 挂起" style="edgeStyle=orthogonalEdgeStyle;html=1;fontSize=11;" edge="1" parent="1" source="PY" target="U">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
