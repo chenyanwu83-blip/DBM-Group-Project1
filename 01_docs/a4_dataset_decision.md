@@ -46,13 +46,13 @@
 | Passenger | 3,000 | 姓名/注册信息生成（真实数据仅提供 rider_id 粒度） |
 | Driver | 150 | 司机:乘客 ≈ 1:20（方案给定比例） |
 | Vehicle | 150 | 与 Driver 一一绑定（N:1，vehicle_id UNIQUE）；品牌/型号可参照 RideAustin 真实车辆分布（Toyota/Cadillac/Nissan 等） |
-| Trip | **60,000** | ≥ 5 万行 M2 硬指标；status 占比（D-05 下无 requested）：completed ≈ 82%、canceled ≈ 10%（其中 ~60% 超宽限期带取消费、~40% 宽限期免费，D-06）、accepted/en_route ≈ 8%；start_time = INSERT（派单）时刻 |
-| Payment | ≈ 51,300 | completed ≈ 49,200 行按 **~97%** 生成支付（**故意留 ~2-3% 未支付**使官方 Q2 反连接非空可截图）+ canceled 超宽限期取消行 ≈ 3,600（amount = 取消费 ¥8，D-06） |
+| Trip | **60,000** | ≥ 5 万行 M2 硬指标；status 占比（D-05 下无 requested）：completed ≈ 82%、canceled ≈ 10%（=取消两类结果：~60% 超宽限期收费取消 + ~40% 宽限期免费取消，D-06 v1.1）、accepted/en_route ≈ 8%；start_time = INSERT（派单）时刻 |
+| Payment | ≈ 51,300 | completed ≈ 49,200 行按 **~97%** 生成支付（**故意留 ~2-3% 未支付**使官方 Q2 反连接非空可截图）+ canceled 收费取消行 ≈ 3,600（amount = 取消费 ¥8，D-06 v1.1） |
 
 分布参数（RideAustin 实测标定，对齐 A3 负载假设）：
 
 - **车型档次占比**（B3 扩展二，v1.2 全量实测）：REGULAR ≈ 95.0% / SUV ≈ 3.7% / PREMIUM ≈ 0.9% / LUXURY ≈ 0.3%（另有 0.1% `b'HONDA'` 脏值清洗后归并；60,000 行 → 约 57,000 / 2,220 / 540 / 180，各档样本量充足）
-- **车费结构**：fare = 基础价 + 单价×时长 + 单价×里程；**四档费率实测**（REGULAR $1.5 起 + $0.25/min + $0.99→$1.50/mi 含平台真实调价；SUV $3.0/$2.60/$0.35；PREMIUM $3.0/$2.75/$0.40；LUXURY $5.0/$3.75/$0.50），total_fare 全量均值 ≈ **$13.99**；canceled 超宽限期行固定 = 取消费 ¥8（D-06，help.uber.com 口径，课程简化值）
+- **车费结构**：fare = 基础价 + 单价×时长 + 单价×里程；**四档费率实测**（REGULAR $1.5 起 + $0.25/min + $0.99→$1.50/mi 含平台真实调价；SUV $3.0/$2.60/$0.35；PREMIUM $3.0/$2.75/$0.40；LUXURY $5.0/$3.75/$0.50），total_fare 全量均值 ≈ **$13.99**；canceled 收费取消行固定 = 取消费 ¥8（D-06 v1.1，help.uber.com 口径，课程简化值）
 - **评分**（B3 扩展二，v1.2 实测修订）：1–5 整数，仅 completed 行程，**≈ 90.7% 有值**（空置率 9.26%，v1.1 误将空置率数字记为覆盖率；NULL 语义真实存在）；有值行中 ≈ 5★90.3% / 4★5.5% / 3★2.0% / 2★0.6% / 1★1.7%
 - `start_time` 晚高峰（17–20 时）集中 ≈ 20%；`method` 占比：balance/cash/card ≈ 45/30/25%（真实数据无支付方式字段，此项沿用 A3 假设）
 
@@ -61,7 +61,7 @@
 - [x] 全组确认选型（10-22，群讨论收敛：生成器路线不变）→ M1 补票
 - [x] **v1.2 勘误 + 全量实测档案**（10-23，`a4_rideaustin_profile.md`：A/B 可 JOIN、费率四档、数字校准）→ 建议 E3 同步修订决策表 D-10 论证（原始数据路线的"不可 JOIN"障碍已消除，剩余障碍见档案第三节）
 - [ ] **待群表决**：币种保留美元 $ 还是换算 ¥（建议保 $，避免引入汇率时点）
-- [ ] C4 按第三节参数实现 `import_data.py`（固定 seed 写死在脚本头部，写入 `03_data/source/` 生成说明 + 本文档链接）
+- [ ] C4 按第三节参数实现 `import_data.py`（固定 seed 写死在脚本头部，写入 `03_data/source/` 生成说明 + 本文档链接）——**验收三条（D-06 v1.1）**：① canceled 行要么 fare=NULL 且无 Payment、要么 fare=取消费且**恰 1 条** Payment；② status 只用 completed/canceled/accepted/en_route（无 requested/ongoing）；③ Payment.method 取值统一 balance/cash/card
 - [ ] B3/B4 按第五节建表开工（不再被数据集阻塞）
 - [ ] E3 收档：References 收录数据 DOI + 论文 DOI；报告 §1.4 数据来源声明（回应老师问询）
 

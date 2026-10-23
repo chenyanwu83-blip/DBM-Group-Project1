@@ -1,3 +1,6 @@
+# 预研脚本（D2 查询验证用，5000 行，seed=42）——非交付物：
+# 本脚本不按 D-06 v1.1 生成取消/支付规则（canceled 为随机车费、仅 completed 有支付、含 ongoing 状态），
+# 正式数据脚本为 C4 的 import_data.py，业务规则以 01_docs/design_decisions.md（D-06 v1.1）+ a4_dataset_decision.md §三 为准。
 import random
 from datetime import datetime, timedelta
 from faker import Faker
