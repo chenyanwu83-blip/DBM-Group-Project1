@@ -1,6 +1,6 @@
-# A4 附 · RideAustin 标定数据集实测档案 v1.0
+# A4 附 · RideAustin 标定数据集实测档案 v1.1
 
-> 陈祎楠 / 角色 A · 2026-10-23 · 方法：两份 CSV 全量单遍扫描（1,494,125 行，awk），文件 A/B 均于 10-23 取自 Mendeley
+> 陈祎楠 / 角色 A · 2026-10-23 · 方法：两份 CSV 全量单遍扫描（1,494,125 行，awk）；**v1.1 增补：前 20–30 万行残差分析 + 时间链核验（10-23，B 字段口径问询触发，增补勘误见第五节）**。文件 A/B 均于 10-23 取自 Mendeley
 > 用途：报告 §1.4 数据来源声明素材 + C4 生成器标定参数依据 + 答辩 Q&A；**本档案为 A4 v1.2 勘误依据**（勘误要点见第五节）
 
 ## 〇、数据集档案
@@ -59,7 +59,7 @@
 | 属性 | 实测值域 |
 |---|---|
 | `RIDE_ID` | 与文件 A 逐行同轴（零错位） |
-| `status` | **DISPATCHED 69.97%（1,045,444）/ DECLINED 30.03%（448,681）**——语义是**派单尝试结果**，非行程状态；DISPATCHED 行 100% 有 fare、DECLINED 行 100% 无 fare，零交叉 |
+| `status` | **DISPATCHED 69.97%（1,045,444）/ DECLINED 30.03%（448,681）**——语义是**派单尝试结果**，非行程状态；~~DISPATCHED 行 100% 有 fare、DECLINED 行 100% 无 fare，零交叉~~ **v1.1 勘误：total_fare 覆盖与 status 无关**——DISPATCHED 100% 有 fare，DECLINED 亦 **99.998% 有 fare**（前 30 万行 85,518/85,520；原始行 72256/72764 = DECLINED+fare+tip）。DECLINED 行文件 A 侧行程照常完成 → 该次派单尝试未成交、行程由后续司机完成（A.active_driver_id 与 B.driver_id 命名空间不同，不可核验）；**"DECLINED 无 fare"不得再作 status 语义证据引用** |
 | `driver_id` | **4,976 个真实司机**，最高频 3,235 单、人均 ≈300 单（可做司机粒度分析） |
 | `car_id` | 4,976 个，**与 driver_id 严格 1:1**（driver=car=pairs=4,976）→ 官方 DDL 的 Driver–Vehicle 1:1 基数在真实数据中成立 |
 
@@ -75,16 +75,16 @@
 
 | 属性 | 实测值域 |
 |---|---|
-| `total_fare` | 均值 **$13.99**，min 0、max $2,732.65（脏值） |
-| `time_fare` | 时长费组成 |
-| `tip` | **28.84% 行有小费，均值 $2.81，范围 $0.01–$300**；`tipped_on` 有值率与之一致 |
+| `total_fare` | 均值 **$13.99**，min 0、max $2,732.65（脏值）。**v1.1 组成实测（前 20 万行）**：**不含 tip**（无小费行残差均值 $1.81 vs 有小费行 $1.84，corr(残差, tip)=0.02≈0）；不含 `free_credit_used`/`round_up_amount`（支付侧抵扣/凑整，样本中 free_credit ≤ total 且未被减去）；≈ 计价核心 + **$1.6–1.7 固定附加费**（median $1.64、sd 0.48，与接驾时长 corr=−0.03 → 非接驾费，booking/service fee 性质，数据集未给名目）；surge>1 行 `total ≠ core×surge` 亦 `≠ core`，**surge 只引 surge_factor 分布本身，勿按乘法还原车费** |
+| `time_fare` | 时长费组成；**= rate_per_minute ×（completed_on − started_on），秒级精确**（99.8% 行差 <0.5 分钟，前 6 万行实测） |
+| `tip` | **28.84% 行有小费，均值 $2.81，范围 $0.01–$300**（全量）；`tipped_on` 有值率与之一致，且常晚于 completed_on 一天（事后补小费 → 与 total_fare 分离的旁证）。**v1.1：前 20 万行 tip 率仅 13.6% → 小费率随数据期上行，引用须注明段口径；标定参数按 D-12 从标定集重算时自然覆盖** |
 
 **③ 时间链与接驾类**
 
 | 属性 | 覆盖率 / 说明 |
 |---|---|
-| `dispatched_on` | 100%；**实测 = 请求创建时刻**（与 A `created_date` 70% 秒级一致，字段名有误导） |
-| `driver_accepted_on` | 100% 司机应答 |
+| `dispatched_on` | 100%；**实测 = 请求创建时刻**（与 A `created_date` 70% 秒级一致，字段名有误导）；值为**无时区 UTC**（比对前先把 created_date 转 UTC） |
+| `driver_accepted_on` | 100% 司机应答 = **"司机接单"锚点字段**（对应 D-05 start_time=接单时刻 / D-11① 已接单口径）。**v1.1 勘误：导出带错误 −05:00 后缀**——真实当地时间 = 字面值 **+5h（CDT）/+6h（CST）**；按字面解析会得出"接单早于下单 5 小时"。核验：5 样本 accepted − created = +4s~+20s，链条 created→accepted→reached→started→completed 合理 |
 | `esimtated_time_arrive` | 94.7%（原始拼写即错，estimated） |
 | `driving_time_to_rider` / `driving_distance_to_rider` | 98.5% / 79.4%（接驾时长/距离） |
 | `dispatch_location_lat/long` | **脏**（样例两列同值 -121.039），不可信 |
@@ -113,7 +113,9 @@
 3. `requested_car_category` 混入 `b'HONDA'` 0.10%（品牌串档）；
 4. 文件 A 坐标列与文件 B `dispatch_location_*` 均有异常/占位值；
 5. 司机粒度只能用文件 B（A 的 `active_driver_id` 过度脱敏）；
-6. 两文件 `rating`/`driver_rating` 语义不同（历史均分 vs 本单分）。
+6. 两文件 `rating`/`driver_rating` 语义不同（历史均分 vs 本单分）；
+7. **B 文件时间戳时区错位**（v1.1）：`dispatched_on` 为 UTC-naive；`driver_accepted_on` 带错误 −05:00 后缀，需 +5h/+6h 修正（见§二③）；
+8. **total_fare 含 ≈$1.7 固定附加费、不含 tip/free_credit/round_up**（v1.1，组成见§二②）——对照表直接对均值列原值，勿按费率重算还原。
 
 ## 五、A4 v1.1 → v1.2 勘误对照
 
@@ -125,6 +127,15 @@
 | 车型占比 | 95.3 / 3.5 / 0.8 / 0.35 | **95.0 / 3.7 / 0.9 / 0.3**（另有 HONDA 脏值 0.1%） |
 | 费率 | 单一 $1.5+$0.25/min+$0.99/mi | **四档费率表**（见第二节②，REGULAR 含真实调价） |
 | total_fare 均值 | ≈$14.2 | **$13.99** |
+
+**v1.0 → v1.1 增补勘误（10-23，B 字段口径问询触发；抽样前 20–30 万行，约全量 1/7）**
+
+| 项 | v1.0 | v1.1 实测修订 |
+|---|---|---|
+| DECLINED 行 fare | "100% 无 fare、零交叉" | **99.998% 有 fare**（实测相反，85,518/85,520） |
+| total_fare 组成 | 仅登记均值 | **不含 tip/free_credit/round_up**；≈ 计价核心 + $1.6–1.7 固定附加费 |
+| driver_accepted_on | 仅"100% 司机应答" | 带错误 −05:00 后缀，真实 = 字面 +5h（CDT）/+6h（CST）；dispatched_on 为 UTC-naive |
+| tip 率段差异 | 未登记 | 前 20 万行 13.6% vs 全量 28.84% → 随数据期上行，段口径须注明 |
 
 ## 六、生成器新增标定参数（C4 可选）
 
@@ -144,6 +155,7 @@
 | 验证方式 | 生成 60,000 行后，与留出段出**分布对照表**（报告 §5 引用，数字按 D-08④ 同机产出） |
 
 **可比维度（进对照表）**：车型四档占比 · 费率四档结构与 total_fare 均值 · 评分覆盖率与星级分布 · 晚高峰（17–20 时）占比。
+**对照口径注（v1.1）**：① total_fare 均值直接用列原值（组成见§二②），勿按费率重算还原；② 晚高峰真实侧用 `created_date` 或修正后 `driver_accepted_on`（两者差秒级，注明用哪个）；③ 评分分布：真实侧 0.5 星步长、生成侧 1–5 整数（D-11），差异注一句。
 
 **不可比维度（不进表，报告注明"业务规则为课程设定"）**：status 构成（真实数据全为完成单，无 canceled 语义）· Payment.method · 未支付率——真实数据无对应字段，放进表里反而暴露追问面。
 
