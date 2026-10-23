@@ -19,7 +19,7 @@
 | 取消费 | cancellation fee | USD 1.5 课程简化值，=REGULAR 档基础价（D-06 v1.2，10-23 全程美元） |
 | 宽限期 | grace period | 免费与收费取消的判定标准，本文取 3 分钟（D-06 v1.1） |
 | 取消两类结果 | cancellation outcomes | 免费取消（fare NULL 无 Payment）/ 收费取消（fare=取消费 + 恰 1 条 Payment）；提前结束属完成单计费，非取消（D-06 v1.1） |
-| 热区 | hot zone | q09，待 B3 扩展表决 |
+| 热区 | hot zone | q09（B3① 已通过，D-11）；**统计口径 = 已接单**（全 Trip 行含接单后取消），结论只答"已接单最多"，不得推出"最缺司机" |
 | 服务档次 | service tier | 档名用 RideAustin 原生 **REGULAR / SUV / PREMIUM / LUXURY**，勿直译"快车/专车"（A4 §五） |
 | 乘客评分 | rider rating | 1–5 星整数，仅 completed 可有值（≈90.7% 有值，v1.2 实测修订，NULL 语义真实存在）；`AVG(rating)` 自动忽略 NULL |
 | 高峰时段 | peak hours | Q6（晚高峰 17–20 时 ≈ 20%） |
@@ -28,12 +28,12 @@
 | 丢失更新 | lost update | 概念题 Q5，read-modify-write 前提要写清 |
 | 隔离级别 | isolation level | 概念问答 + 实验③ |
 | 引用完整性 | referential integrity | G5：FK 违反须被数据库拒绝 |
-| 仿真数据 | synthetic (generated) dataset | 路线 B，seed=42，分布参照 NYC TLC（D-10） |
+| 仿真数据 | synthetic (generated) dataset | 路线 B，seed=42，分布**标定自 RideAustin**（D-10 v1.1），80/20 标定-留出对照（D-12） |
 
 ## 三、数字与单位写法
 
 - 金额：USD + 两位小数（如 USD 35.00 / $35.00），与 `DECIMAL(8,2)` 对齐；**全文统一美元（10-23 表决，D-06 v1.2），勿再出现 ¥/CNY**
 - 时延：ms（P95 < 200 ms）；吞吐：TPS；行数：千分位（60,000）
 - 百分比：数字 + %（≈ 82%）；区间用短横线（USD 10–120）
-- 版本号如实照抄登记表：MySQL 8.0.45 / 26.7.0 / 9.6.0（以 `env_record.md` 为准）
+- 版本号如实照抄登记表：MySQL 8.0.45 / 8.0.46 / 26.7.0 / 26.10.0（以 `env_record.md` 为准）
 - "≥ 5 万行"这类硬指标在正文出现时，同时给出实际值（60,000）与来源（自检截图编号）
