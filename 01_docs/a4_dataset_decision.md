@@ -1,6 +1,7 @@
 # A4 · 数据集选型（定稿 v1.1）
 
 > 陈祎楠 / 角色 A · 2026-10-22 · **状态：定稿——路线 B（固定 seed 生成器）不变，标定来源由 NYC TLC 升级为 RideAustin 真实开源数据**
+> **v1.2 勘误（2026-10-23）**：A/B 实测可按 RIDE_ID 行级 JOIN（旧"不同轴"结论作废）、费率实为四档结构、覆盖率/占比按全量实测校准——明细见 [a4_rideaustin_profile.md](a4_rideaustin_profile.md)
 > 回应老师问询「数据现成还是生成」：**生成**（`import_data.py` 固定 seed），**分布参数标定自真实运营数据**（RideAustin，DOI 可引用）。
 > 交 C 落地（C4 import_data.py，截止 10-25）；B3/B4 据第五节即可开工。
 
@@ -16,7 +17,7 @@
 | 文件 A `Rides_DataA.csv`（327MB） | 行程事实：`requested_car_category`（四档）、`driver_rating`/`rider_rating`（每单 1–5 星）、`rider_id`、`active_driver_id`、时间链（created→driver_reached→started→completed）、`distance_traveled`、`surge_factor` |
 | 文件 B `Rides_DataB.csv`（319MB） | 派单/费率佐证：`base_fare`/`rate_per_mile`/`rate_per_minute`/`total_fare`、`tip`、`status`（DISPATCHED/DECLINED）、`driver_id`+`car_id` 1:1 绑定、车辆 color/make/model/year |
 
-**使用注意（C/D 勿踩坑）**：① A/B 两文件 RIDE_ID 编号不同轴、司机 ID 命名空间不同，**不可行级 JOIN**，各作独立标定来源；② 文本列带 `b'...'` 外壳（作者导出痕迹），抽取参数时 strip 掉；③ 币种为美元，是否换算 ¥ 见第四节待表决项。
+**使用注意（C/D 勿踩坑，v1.2 实测修订）**：① ~~A/B 不可行级 JOIN~~ → **实测两文件 RIDE_ID 同轴逐行对应、可 JOIN**（10-23 全量验证零错位，见实测档案第三节）；但司机 ID 命名空间不同：A 的 `active_driver_id` 过度脱敏近唯一，**司机粒度分析只能用 B 的 `driver_id`**（4,976 人、车严格 1:1）；② 文本列带 `b'...'` 外壳（导出痕迹），strip 掉；③ 币种为美元（无 currency 列），是否换算 ¥ 见第四节待表决项；④ 采参数前清洗：`distance_traveled` 有 0/4.3 万公里级脏值、车型列混入 `b'HONDA'`、坐标列有占位异常（坑清单见实测档案第四节）。
 
 ## 一、双路线对比（选型过程存档）
 
@@ -50,14 +51,15 @@
 
 分布参数（RideAustin 实测标定，对齐 A3 负载假设）：
 
-- **车型档次占比**（B3 扩展二）：REGULAR ≈ 95.3% / SUV ≈ 3.5% / PREMIUM ≈ 0.8% / LUXURY ≈ 0.35%（60,000 行 → 约 57,180 / 2,100 / 480 / 210，各档样本量充足）
-- **车费结构**：fare = 基础价 + 单价×时长 + 单价×里程，真实费率 $1.5 起 + $0.25/分钟 + $0.99/英里，实测均值 ≈ $14.2；canceled 超宽限期行固定 = 取消费 ¥8（D-06，help.uber.com 口径，课程简化值）
-- **评分**（B3 扩展二）：1–5 整数，仅 completed 行程，**≈ 92.6% 有值**（NULL 语义真实存在）；值分布 ≈ 5★90.6% / 4★5.4% / 3★1.9% / 2★0.6% / 1★1.6%
+- **车型档次占比**（B3 扩展二，v1.2 全量实测）：REGULAR ≈ 95.0% / SUV ≈ 3.7% / PREMIUM ≈ 0.9% / LUXURY ≈ 0.3%（另有 0.1% `b'HONDA'` 脏值清洗后归并；60,000 行 → 约 57,000 / 2,220 / 540 / 180，各档样本量充足）
+- **车费结构**：fare = 基础价 + 单价×时长 + 单价×里程；**四档费率实测**（REGULAR $1.5 起 + $0.25/min + $0.99→$1.50/mi 含平台真实调价；SUV $3.0/$2.60/$0.35；PREMIUM $3.0/$2.75/$0.40；LUXURY $5.0/$3.75/$0.50），total_fare 全量均值 ≈ **$13.99**；canceled 超宽限期行固定 = 取消费 ¥8（D-06，help.uber.com 口径，课程简化值）
+- **评分**（B3 扩展二，v1.2 实测修订）：1–5 整数，仅 completed 行程，**≈ 90.7% 有值**（空置率 9.26%，v1.1 误将空置率数字记为覆盖率；NULL 语义真实存在）；有值行中 ≈ 5★90.3% / 4★5.5% / 3★2.0% / 2★0.6% / 1★1.7%
 - `start_time` 晚高峰（17–20 时）集中 ≈ 20%；`method` 占比：balance/cash/card ≈ 45/30/25%（真实数据无支付方式字段，此项沿用 A3 假设）
 
 ## 四、遗留动作
 
 - [x] 全组确认选型（10-22，群讨论收敛：生成器路线不变）→ M1 补票
+- [x] **v1.2 勘误 + 全量实测档案**（10-23，`a4_rideaustin_profile.md`：A/B 可 JOIN、费率四档、数字校准）→ 建议 E3 同步修订决策表 D-10 论证（原始数据路线的"不可 JOIN"障碍已消除，剩余障碍见档案第三节）
 - [ ] **待群表决**：币种保留美元 $ 还是换算 ¥（建议保 $，避免引入汇率时点）
 - [ ] C4 按第三节参数实现 `import_data.py`（固定 seed 写死在脚本头部，写入 `03_data/source/` 生成说明 + 本文档链接）
 - [ ] B3/B4 按第五节建表开工（不再被数据集阻塞）
