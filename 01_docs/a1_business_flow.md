@@ -1,6 +1,6 @@
 # A1 · 业务流程图草图（网约车订单与行程调度）
 
-> 陈祎楠 / 角色 A · 2026-10-22 · v1.3.1（D-06 v1.1 改名同步：取消两类结果 + 完成单计费）· 状态：草稿
+> 陈祎楠 / 角色 A · 2026-10-22 · v1.3.2（D-06 v1.1 改名 + v1.2 币种定 $：取消费 $1.5）· 状态：草稿
 > 用途：供 B 建模参考；A8 复核 ER 时以此对照。
 
 ## 0. 决策 D-05（Trip 入库时点）：保持官方 DDL 不变，Trip 在派单成功时才入库
@@ -20,7 +20,7 @@ flowchart TD
     M -- "无人接单 / 乘客取消" --> X0["订单作废（不入库）"]
     M -- "司机接单" --> A["INSERT Trip：status='accepted'<br/>psg_id、driver_id 写入<br/>start_time 默认写入（=派单时刻）<br/>司机绑定唯一 vehicle_id（前往接驾）"]
     A -- "宽限期内取消（约3分钟）" --> X1a["Trip.status='canceled'<br/>免费：无 fare、无 Payment"]
-    A -- "接驾途中/到达后取消" --> X1b["Trip.status='canceled'<br/>fare=取消费（固定约¥8）<br/>生成 Payment：amount=取消费"]
+    A -- "接驾途中/到达后取消" --> X1b["Trip.status='canceled'<br/>fare=取消费（固定 $1.5）<br/>生成 Payment：amount=取消费"]
     A --> S["乘客上车，行程进行中<br/>status='en_route'"]
     S -- "到达终点 / 中途提前结束" --> C["行程结束 status='completed'<br/>fare 按实际里程/时长结算"]
     C --> PY["生成支付 Payment<br/>amount ≥ 0, method<br/>trip_id UNIQUE → 每行程至多一笔"]
@@ -41,7 +41,7 @@ flowchart TD
               ┌──────────────────┼────────────────────┐
         宽限期内取消         接驾途中/到达后取消        乘客上车 en_route
               │                   │                      │
-        canceled 免费       canceled+取消费(¥8)      到终点/中途提前结束
+        canceled 免费       canceled+取消费($1.5)      到终点/中途提前结束
         (无fare无Payment)   fare=取消费,有Payment         │
                                                         completed
                                                     fare 按实际里程/时长
@@ -69,7 +69,7 @@ flowchart TD
 | 情形 | 判定 | status | fare | Payment | 依据来源 |
 |---|---|---|---|---|---|
 | ① 宽限期内取消 | 接单后宽限期内取消（Uber 原文：宽限期**因城市而异**；本文取 3 分钟为课程简化值） | `canceled` | 无 | 无 | 来源 3（Uber Help：宽限期内不收取消费） |
-| ② 超宽限期取消 | ①超出宽限期乘客取消；②司机到达等待后乘客未出现（司机取消）；③司机接驾异常迟缓时**豁免**（回到①） | `canceled` | **取消费**（官方原文：*"pay drivers for the time and effort they spend getting to your location"*，补偿接驾空驶；金额因城市/产品而异，本文取固定 ¥8 为课程简化值） | **有**：amount=取消费 | 来源 3（取消费触发条件与用途）+ 来源 2（任何收费必须落持久化事务记录→取消费也生成 Payment） |
+| ② 超宽限期取消 | ①超出宽限期乘客取消；②司机到达等待后乘客未出现（司机取消）；③司机接驾异常迟缓时**豁免**（回到①） | `canceled` | **取消费**（官方原文：*"pay drivers for the time and effort they spend getting to your location"*，补偿接驾空驶；金额因城市/产品而异，本文取固定 **$1.5** = REGULAR 档基础价为课程简化值，全程美元 D-06 v1.2） | **有**：amount=取消费 | 来源 3（取消费触发条件与用途）+ 来源 2（任何收费必须落持久化事务记录→取消费也生成 Payment） |
 | ③ 上车后中途结束（提前结束）※完成单计费，非取消结果 | 已 `en_route` | `completed` | 按实际里程/时长正常计费 | 正常支付 | 服务已实际提供；官方 Q1/Q3 以 completed/车费为口径，提前结束是真收入 |
 
 **三条边界要点**：
@@ -100,3 +100,4 @@ flowchart TD
 - v1.2（10-22）：新增"提前结束 vs 取消"边界口径——en_route 后结束（含提前）= completed、按实际计费；en_route 前取消 = canceled。决策名由评审期临时名"D1"统一为登记号 D-05（v1.1 修订记录保留原名属历史记录）。
 - v1.3（10-22）：按三篇公开来源升级为**三段式取消计费**（决策 D-06）——①宽限期内取消免费（无 fare 无 Payment）；②超宽限期取消收取消费（canceled + fare=取消费 + 有 Payment；含到达未现/司机取消触发，接驾迟缓可豁免）；③上车后中途提前结束 = completed 按实际里程/时长计费。取消从单一 X1 拆为 X1a/X1b；"canceled 无 Payment"旧口径作废；S 节点明确"乘客上车"为取消/完成分界。来源 3 已替换为**已核验的 help.uber.com 官方条目**（宽限期因城市而异、取消费官方定义均已按原文校准）。
 - v1.3.1（10-23）：随 D-06 v1.1 改名——"三段式取消计费"改称"**接单后取消的两类结果 + 完成单计费规则**"（B 提案、组内收敛）：①②为取消的两类结果，③明确属完成单计费而非取消结果；规则、数值、流程图零改动。
+- v1.3.2（10-23）：币种全组表决定**全程美元 $**——取消费 ¥8 → **$1.5**（=REGULAR 档基础价，与 RideAustin 标定费率同口径，D-06 v1.2）。
