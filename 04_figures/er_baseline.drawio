@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="b2-baseline" name="B2 Official Baseline">
+    <mxGraphModel dx="1300" dy="780" grid="1" gridSize="10" page="1" pageScale="1" pageWidth="1300" pageHeight="780">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="&lt;b&gt;Ride-Hailing Order and Trip Dispatch&lt;/b&gt;&lt;br&gt;&lt;font color=&quot;#566374&quot;&gt;B2 official five-entity ER baseline&lt;/font&gt;" style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;text;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=23;" vertex="1" parent="1">
+          <mxGeometry x="175" y="28" width="950" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="passenger" value="&lt;b&gt;Passenger&lt;/b&gt;&lt;br&gt;&lt;i&gt;psg_id&lt;/i&gt; (PK)&lt;br&gt;name" style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;shape=rectangle;rounded=0;align=left;verticalAlign=top;spacingTop=13;spacingLeft=18;strokeColor=#2A4A79;strokeWidth=2;fillColor=#F7F9FC;fontSize=19;" vertex="1" parent="1">
+          <mxGeometry x="75" y="288" width="225" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="trip" value="&lt;b&gt;Trip&lt;/b&gt;&lt;br&gt;&lt;i&gt;trip_id&lt;/i&gt; (PK)&lt;br&gt;*psg_id (FK)&lt;br&gt;*driver_id (FK)&lt;br&gt;fare&lt;br&gt;status&lt;br&gt;start_time" style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;shape=rectangle;rounded=0;align=left;verticalAlign=top;spacingTop=13;spacingLeft=18;strokeColor=#2A4A79;strokeWidth=2;fillColor=#F7F9FC;fontSize=19;" vertex="1" parent="1">
+          <mxGeometry x="440" y="228" width="265" height="230" as="geometry" />
+        </mxCell>
+        <mxCell id="driver" value="&lt;b&gt;Driver&lt;/b&gt;&lt;br&gt;&lt;i&gt;driver_id&lt;/i&gt; (PK)&lt;br&gt;name&lt;br&gt;*vehicle_id (FK, UNIQUE)" style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;shape=rectangle;rounded=0;align=left;verticalAlign=top;spacingTop=13;spacingLeft=18;strokeColor=#2A4A79;strokeWidth=2;fillColor=#F7F9FC;fontSize=19;" vertex="1" parent="1">
+          <mxGeometry x="880" y="290" width="315" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="vehicle" value="&lt;b&gt;Vehicle&lt;/b&gt;&lt;br&gt;&lt;i&gt;vehicle_id&lt;/i&gt; (PK)&lt;br&gt;plate (UNIQUE)" style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;shape=rectangle;rounded=0;align=left;verticalAlign=top;spacingTop=13;spacingLeft=18;strokeColor=#2A4A79;strokeWidth=2;fillColor=#F7F9FC;fontSize=19;" vertex="1" parent="1">
+          <mxGeometry x="895" y="115" width="285" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="payment" value="&lt;b&gt;Payment&lt;/b&gt;&lt;br&gt;&lt;i&gt;pay_id&lt;/i&gt; (PK)&lt;br&gt;*trip_id (FK, UNIQUE)&lt;br&gt;amount&lt;br&gt;method" style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;shape=rectangle;rounded=0;align=left;verticalAlign=top;spacingTop=13;spacingLeft=18;strokeColor=#2A4A79;strokeWidth=2;fillColor=#F7F9FC;fontSize=19;" vertex="1" parent="1">
+          <mxGeometry x="450" y="540" width="250" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="p_t" style="edgeStyle=none;rounded=0;html=1;strokeColor=#354052;strokeWidth=2;endArrow=none;startArrow=none;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" parent="1" source="passenger" target="trip">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_t" style="edgeStyle=none;rounded=0;html=1;strokeColor=#354052;strokeWidth=2;endArrow=none;startArrow=none;exitX=0;exitY=0.5;entryX=1;entryY=0.5;" edge="1" parent="1" source="driver" target="trip">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="v_d" style="edgeStyle=none;rounded=0;html=1;strokeColor=#354052;strokeWidth=2;endArrow=none;startArrow=none;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="vehicle" target="driver">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="t_pay" style="edgeStyle=none;rounded=0;html=1;strokeColor=#354052;strokeWidth=2;endArrow=none;startArrow=none;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="trip" target="payment">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="card_pt" value="1 : N" style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;text;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=19;fontColor=#A12828;" vertex="1" parent="1">
+          <mxGeometry x="342" y="318" width="70" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="card_dt" value="N : 1" style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;text;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=19;fontColor=#A12828;" vertex="1" parent="1">
+          <mxGeometry x="754" y="318" width="80" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="card_vd" value="1 : N" style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;text;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=19;fontColor=#A12828;" vertex="1" parent="1">
+          <mxGeometry x="999" y="246" width="75" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="card_tpay" value="1 : 1" style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;text;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=19;fontColor=#A12828;" vertex="1" parent="1">
+          <mxGeometry x="620" y="484" width="80" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="&lt;i&gt;Italic&lt;/i&gt; = primary key; * = foreign key. Cardinalities reproduce teacher Figure 5. See the B2 comparison record for SQL constraint differences." style="fontFamily=Times New Roman;html=1;whiteSpace=wrap;text;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=15;fontColor=#536273;" vertex="1" parent="1">
+          <mxGeometry x="135" y="718" width="1030" height="42" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
