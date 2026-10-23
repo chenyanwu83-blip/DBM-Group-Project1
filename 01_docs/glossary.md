@@ -19,6 +19,8 @@
 | 取消费 | cancellation fee | CNY 8 课程简化值（D-06） |
 | 宽限期 | grace period | 宽限期内取消免费（D-06） |
 | 热区 | hot zone | q09，待 B3 扩展表决 |
+| 服务档次 | service tier | 档名用 RideAustin 原生 **REGULAR / SUV / PREMIUM / LUXURY**，勿直译"快车/专车"（A4 §五） |
+| 乘客评分 | rider rating | 1–5 星整数，仅 completed 可有值（≈92.6% 有值，NULL 语义真实存在）；`AVG(rating)` 自动忽略 NULL |
 | 高峰时段 | peak hours | Q6（晚高峰 17–20 时 ≈ 20%） |
 | 反连接 | anti-join | Q2 / Q5 的 NOT EXISTS 写法 |
 | 窗口函数 | window function | Q4 RANK()，需 MySQL ≥ 8.0（已备兼容版） |
