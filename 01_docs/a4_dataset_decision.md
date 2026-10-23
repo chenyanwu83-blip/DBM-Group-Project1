@@ -54,6 +54,7 @@
 - **车型档次占比**（B3 扩展二，v1.2 全量实测）：REGULAR ≈ 95.0% / SUV ≈ 3.7% / PREMIUM ≈ 0.9% / LUXURY ≈ 0.3%（另有 0.1% `b'HONDA'` 脏值清洗后归并；60,000 行 → 约 57,000 / 2,220 / 540 / 180，各档样本量充足）
 - **车费结构**：fare = 基础价 + 单价×时长 + 单价×里程；**四档费率实测**（REGULAR $1.5 起 + $0.25/min + $0.99→$1.50/mi 含平台真实调价；SUV $3.0/$2.60/$0.35；PREMIUM $3.0/$2.75/$0.40；LUXURY $5.0/$3.75/$0.50），total_fare 全量均值 ≈ **$13.99**；canceled 收费取消行固定 = 取消费 **$1.5**（=REGULAR 档基础价，D-06 v1.2，help.uber.com 口径，课程简化值，全程美元）
 - **评分**（B3 扩展二，v1.2 实测修订）：1–5 整数，仅 completed 行程，**≈ 90.7% 有值**（空置率 9.26%，v1.1 误将空置率数字记为覆盖率；NULL 语义真实存在）；有值行中 ≈ 5★90.3% / 4★5.5% / 3★2.0% / 2★0.6% / 1★1.7%
+- **上车区位**（B3 扩展一 / q09 热区，D-11① 10-23 表决通过；**本项归 A，v1.2.1 补**）：**无真实标定源**（RideAustin 无区位字段）——**约 15 个区、头部集中（top3 ≈ 35%）**，空间集中度参照 NYC TLC 公开统计并**在报告如实声明"区位分布为课程设定"**；落表方式（Trip 区位列 / 独立 Zone 表）随 B4 冻结定，C4 按本参数生成、q09 按 D-11①"已接单口径"统计
 - `start_time` 晚高峰（17–20 时）集中 ≈ 20%；`method` 占比：balance/cash/card ≈ 45/30/25%（真实数据无支付方式字段，此项沿用 A3 假设）
 
 ## 四、遗留动作
@@ -80,7 +81,7 @@ CREATE TABLE service_tier (
 ALTER TABLE trip
   ADD COLUMN service_tier_id TINYINT UNSIGNED NOT NULL,
   ADD CONSTRAINT fk_trip_tier FOREIGN KEY (service_tier_id) REFERENCES service_tier(tier_id),
-  ADD COLUMN rating TINYINT UNSIGNED NULL,    -- 乘客给司机的评分，可为空（≈92.6% completed 有值）
+  ADD COLUMN rating TINYINT UNSIGNED NULL,    -- 乘客给司机的评分，可为空（completed 行 ≈90.7% 有值，生成覆盖率取 90%，D-11②；v1.2 勘误：旧注释 92.6% 系空置率误记）
   ADD CONSTRAINT chk_rating CHECK (rating BETWEEN 1 AND 5),
   ADD CONSTRAINT chk_rating_status CHECK (status = 'completed' OR rating IS NULL);
 ```
