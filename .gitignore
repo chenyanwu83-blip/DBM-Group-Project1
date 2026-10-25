@@ -14,3 +14,6 @@ __pycache__/
 # 日志与临时文件
 *.log
 *~
+
+# C4 生成产物可随时复现，不进仓库（python3 02_sql/import_data.py）
+02_sql/data_import.sql
