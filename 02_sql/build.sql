@@ -190,9 +190,13 @@ CREATE TABLE trip_detail (
 -- ============================================================
 SELECT VERSION() AS mysql_version;
 SHOW TABLES;
--- 各表行数（底座阶段应为 0）
-SELECT 'Passenger' AS tbl, COUNT(*) AS rows_ FROM Passenger
-UNION ALL SELECT 'Vehicle',  COUNT(*) FROM Vehicle
-UNION ALL SELECT 'Driver',   COUNT(*) FROM Driver
-UNION ALL SELECT 'Trip',     COUNT(*) FROM Trip
-UNION ALL SELECT 'Payment',  COUNT(*) FROM Payment;
+-- 各表行数（仅跑本脚本、未导数时：底座五表 = 0；维度表已 seed =
+-- service_tier 4 / pickup_zone 15；trip_detail 随 C4 与 Trip 同步生成 = 0）
+SELECT 'Passenger'   AS tbl, COUNT(*) AS rows_ FROM Passenger
+UNION ALL SELECT 'Vehicle',      COUNT(*) FROM Vehicle
+UNION ALL SELECT 'Driver',       COUNT(*) FROM Driver
+UNION ALL SELECT 'Trip',         COUNT(*) FROM Trip
+UNION ALL SELECT 'Payment',      COUNT(*) FROM Payment
+UNION ALL SELECT 'service_tier', COUNT(*) FROM service_tier
+UNION ALL SELECT 'pickup_zone',  COUNT(*) FROM pickup_zone
+UNION ALL SELECT 'trip_detail',  COUNT(*) FROM trip_detail;
