@@ -18,7 +18,9 @@ mysql -u root -p < 02_sql/data_import.sql
 
 只依赖标准库（random/datetime/argparse），**不用 faker**——第三方库版本漂移会破坏五机
 逐行一致，姓名/车牌由脚本内置表生成（D-08③ 口径）。生成逻辑全部走 `random.Random(534)`
-单实例；曾出现的未播种 `random.shuffle` 缺陷已修复并经双跑 md5 校验（e0710053…）。
+单实例；曾出现的两个缺陷均已修复并经双跑 md5 校验（当前 068a62f7…）：①未播种
+random.shuffle；②字符串免引号优化导致 MySQL 把裸 status/method 当列名（真机导入
+报 Unknown column，2026-10-27 C5 预验时发现修复）。
 
 ## 二、行数与构成（本次实际产出，seed=534）
 

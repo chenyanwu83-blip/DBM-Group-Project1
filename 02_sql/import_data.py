@@ -226,10 +226,11 @@ def generate():
 # SQL 文件输出（多行 VALUES 批量插入；表序满足 FK 依赖）
 # ──────────────────────────────────────────────────────────────
 def _esc(v):
+    # 所有字符串一律加引号：裸写 completed/cash 会被 MySQL 解析为列名
+    # （真机导入踩坑：Unknown column 'completed' —— 2026-10-27 修复）
     if v is None:
         return "NULL"
-    if isinstance(v, str) and v not in ("completed", "canceled", "accepted", "en_route",
-                                        "balance", "cash", "card"):
+    if isinstance(v, str):
         return "'" + v.replace("\\", "\\\\").replace("'", "\\'") + "'"
     if isinstance(v, float):
         return f"{v:.2f}"
