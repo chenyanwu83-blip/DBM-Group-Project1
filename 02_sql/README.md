@@ -5,7 +5,8 @@
 | `build.sql` | 可重复执行的完整建库脚本（**官方交付物之一**）：按 DROP → CREATE → 约束 顺序组织，任何人从零复跑必须成功 | C（C2/C3） |
 | `schema.sql` | 全量 DDL，与 build.sql 保持同步（底座 + 扩展表） | C（C3） |
 | `import_data.py` | 样本数据导入：生成器（faker + 固定 seed）或 NYC TLC 子集清洗入库 | C（C4） |
-| `exp_index.sql` | 实验支撑脚本三件：建/撤索引、EXPLAIN 采集、双会话并发事务演示 | C（C6） |
+| `exp_index.sql` | 实验一 索引前后（建/撤索引 + EXPLAIN 采集）+ 实验二 JOIN 对比子查询三写法 | C（C6） |
+| `exp_concurrency.sql` | 实验三 双会话并发事务（丢失更新 / FOR UPDATE / 隔离级别）+ G5 约束拦截证据 | C（C6） |
 | `requirements.txt` | Python 依赖版本锁定（pandas/SQLAlchemy/faker），保证固定 seed 跨机器生成同一份数据 | C（C4） |
 
 ## 约定
