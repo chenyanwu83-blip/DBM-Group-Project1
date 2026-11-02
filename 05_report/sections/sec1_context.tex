@@ -1,28 +1,86 @@
 % ============================================================
 % §1 Business Context and Goals — A 主笔、E 润色 · 页数预算 1.5
-% 素材：A1 业务流程 / A2 利益相关者 / A3 目标与约束 / A4 数据集选型 / A6 CAP 权衡
+% 素材：A1 业务流程 v1.3.2 / A2 利益相关者 / A3 目标与约束 v1.1 / A4 数据集选型 v1.2.1 / A5 负载画像 v1.0 / A6 一致性权衡 v1.0（六合一）
 % 对应 rubric：Problem framing & significance 4 分 + Methodology 3 分（目标必须带具体数字）
+% v1.0 2026-11-02（A7 首稿，超期 1 天补交）：四小节全部成文
+%   待办：图块待 a1_business_flow.drawio 导出 PDF 至 05_report/figures/ 后 uncomment（导出 A、入工程 E）
 % ============================================================
 \section{Business Context and Goals}
 \label{sec:context}
 
 \subsection{Background and Business Process}
-% TODO(A): 网约车运作链路（下单→派单→行程→支付→评价），配 A1 业务流程图（draw.io 导出矢量 PDF）
-% 口径提醒：匹配队列不落库（D-05）——"下单量"分析属已知局限，§6 呼应
-% 图：\begin{figure}[ht] \centering \includegraphics[width=0.9\textwidth]{figures/business_flow.pdf}
-%      \caption{Business process of order dispatch and fulfilment} \label{fig:business-flow} \end{figure}
-TODO(A): 段落。
+\label{subsec:background}
+
+We model the order-to-fulfilment chain of a ride-hailing platform: a passenger requests a ride, the platform dispatches it to a driver, the trip is performed and paid for, and optionally rated. Five official entities carry this chain---\texttt{Passenger}, \texttt{Driver}, \texttt{Vehicle}, \texttt{Trip} and \texttt{Payment}---joined by two non-default cardinalities: every driver is bound to exactly one vehicle (\texttt{Driver.vehicle\_id} UNIQUE, $N{:}1$), and every trip carries at most one payment (\texttt{Payment.trip\_id} UNIQUE, $1{:}1$).
+
+One scoping decision shapes all downstream analysis (decision D-05): request--driver matching happens in the application layer, and a \texttt{Trip} row is inserted only when dispatch succeeds (\texttt{driver\_id} is \texttt{NOT NULL} in the official DDL). The database therefore never observes unmatched requests, and order-volume or dispatch-latency analytics are out of scope; we acknowledge this in Section~\ref{sec:conclusion}. Once inserted, a trip moves \texttt{accepted} $\rightarrow$ \texttt{en\_route} $\rightarrow$ \texttt{completed}, or is cancelled with two billed outcomes: cancelling within the grace period is free, while late cancellation is charged a flat \$1.50 fee and still produces exactly one \texttt{Payment} row---any charge, including a cancellation fee, must be a durable transactional record (decision D-06; first-party cancellation policy~\cite{ubercancelfee}, transactional-record practice~\cite{uberengmysql}).
+
+% TODO(A/E): 04_figures/a1_business_flow.drawio 导出矢量 PDF 至 05_report/figures/business_flow.pdf 后 uncomment：
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.9\textwidth]{business_flow.pdf}
+%   \caption{Business process of order dispatch and fulfilment; the matching queue stays outside the database (D-05).}
+%   \label{fig:business-flow}
+% \end{figure}
 
 \subsection{Stakeholders and Their Data Needs}
-% TODO(A): A2 五方×2 条（乘客/司机/运营/财务/客服）压缩为一张 booktabs 表，标注每条需求对应的数据来源表
-TODO(A): 表~\ref{tab:stakeholders}。
+\label{subsec:stakeholders}
+
+Table~\ref{tab:stakeholders} summarises the data needs of the five stakeholder parties (two each). Two of these needs harden into structural constraints: per-trip financial reconciliation (Finance, Passengers) forces \texttt{Trip}:\texttt{Payment} $= 1{:}1$, and driver--vehicle auditability (Drivers, Operations) forces \texttt{Driver}:\texttt{Vehicle} $= N{:}1$. Section~\ref{sec:er} realises both with UNIQUE keys rather than application-level checks, and the customer-service requirement ``locate a passenger's full trip chain within 30 seconds'' is the business origin of the latency goal G2 below---targets are derived, not asserted.
+
+\begin{table}[ht]
+\centering\small
+\caption{Stakeholders and their data needs (A2, two per party)}
+\label{tab:stakeholders}
+\begin{tabular}{@{}p{2.6cm}p{4.6cm}p{6.2cm}@{}}
+\toprule
+Party & Data need & Backing tables / keys \\
+\midrule
+Passengers & own trip and fare history & \texttt{Trip.psg\_id} $\bowtie$ \texttt{Payment.trip\_id} \\
+            & fare-vs-charged reconciliation & \texttt{Trip.fare} vs \texttt{Payment.amount} \\
+\addlinespace
+Drivers & lifetime trips and total income & \texttt{Trip.driver\_id}, \texttt{SUM(fare)} \\
+        & unique, auditable vehicle binding & \texttt{Driver.vehicle\_id} (UNIQUE) $\rightarrow$ \texttt{Vehicle} \\
+\addlinespace
+Operations & peak-hour volume and cancellation rate & \texttt{Trip.start\_time}, \texttt{Trip.status} \\
+           & driver--vehicle assignment audit & \texttt{Driver} $\bowtie$ \texttt{Vehicle} ($N{:}1$) \\
+\addlinespace
+Finance & per-trip reconciliation, zero orphan payments & \texttt{Payment.trip\_id} (UNIQUE); anti-join of \texttt{completed} trips without payment \\
+        & daily/monthly revenue by payment method & \texttt{SUM(amount)} grouped by date / \texttt{method} \\
+\addlinespace
+Customer service & locate a full trip chain within 30\,s & five-table join \texttt{Passenger}--\texttt{Trip}--\texttt{Driver}--\texttt{Vehicle}--\texttt{Payment} \\
+        & disputed-fare cross-check & \texttt{fare} vs \texttt{amount} vs \texttt{method} \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Quantified Goals, Constraints and Trade-offs}
-% TODO(A): A3 的 G1–G5 / C1–C6 摘要（P95<200ms、50 TPS、180 天保留、Trip ≥ 50,000 等；数字以全组表决定稿为准）
-% TODO(A): A6 一致性/可用性/延迟权衡——派单与支付为何强一致（转账类比），报表可弱一致（读库/缓存）
-TODO(A): 段落。
+\label{subsec:goals}
+
+Table~\ref{tab:goals} states the design goals with concrete numbers (A3 v1.1); all figures are verifiable against the experiments of Section~\ref{sec:eval}. The supporting constraints are: 180-day online retention with archival (C1), which caps hot-table size and motivates a parsimonious index set; relationship cardinalities enforced by UNIQUE keys (C2); non-negative payment amounts via CHECK (C3); group-wide compatibility at the lowest registered MySQL version, 8.0.45 (C5); and full rebuild from repository scripts within 30 minutes on any member's machine (C6, fixed seed).
+
+\begin{table}[ht]
+\centering\small
+\caption{Quantified design goals (A3 v1.1; single-machine MySQL at sample scale)}
+\label{tab:goals}
+\begin{tabular}{@{}lp{4.9cm}p{5.6cm}@{}}
+\toprule
+\# & Goal (number) & Verification \\
+\midrule
+G1 & sample scale $\ge$ 50{,}000 trips & row-count self-checks after import (delivered: 60{,}000) \\
+G2 & Top-5 query latency $P95 < 200$\,ms; Top-5 $=$ Q6, Q1, Q5, Q2, Q7 (A5) & Experiment~1 index before/after, taken as a single-run EXPLAIN ANALYZE magnitude on the Q5 predicate---reported honestly, not as a measured P95 \\
+G3 & write headroom $\approx$ 50 TPS & design-margin claim (peak model 0.69--1.4 TPS at 50k trips/day, $\approx$36--72$\times$ headroom); not an experiment acceptance item \\
+G4 & reconciliation completeness: zero missed \texttt{completed}-without-payment trips, full-table run $< 500$\,ms & Q2 anti-join verified on the full table \\
+G5 & referential integrity: zero orphans; violations rejected by the DB, not the application & demonstrated rejections: FK error 1452, UNIQUE 1062, CHECK 3819 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Consistency trade-off.} Consistency is tiered by access path rather than chosen globally (A6). The dispatch/payment \emph{write path} is strongly consistent: money and contractual obligations behave like bank transfers, so invalid writes must be rejected by the database itself---transactions plus FK/UNIQUE/CHECK constraints, ``reject rather than silently accept''---and the 1:1 UNIQUE key on \texttt{Payment.trip\_id} is itself the consistency promise that makes anti-join reconciliation (G4) semantically sound. Aggregate \emph{reads} (reconciliation reports, monthly GMV, the 5-minute dispatch dashboard) may be weakly consistent: they consume trends and summaries, where minute-level staleness does not change decisions. Our workload profile justifies the split: by statement count the load is write-dominated ($\approx$99:1), yet by rows scanned it is read-dominated ($>$95\%), so routing wide aggregations to a read replica or cache leaves the primary for single-row writes and keeps its index maintenance affordable. Point lookups stay strongly consistent: customer-service lookups must see the latest trip status. In this course project we run a single instance, so the replica tier is a declared design stance rather than a deployed component (Section~\ref{sec:conclusion}).
 
 \subsection{Dataset Selection Rationale}
-% TODO(A): A4 结论——生成器路线（faker + 固定 seed，分布参照 NYC TLC），样本规模见 A4 第三节
-% 引用 \cite{tlctripdata}；TLC 字段适配一票否决论证压缩为 2–3 句（缺乘客身份/司机-车辆 1:1 源字段）
-TODO(A): 段落。
+\label{subsec:dataset}
+
+The dataset is synthetic: \texttt{import\_data.py} generates it with a fixed seed, so every member rebuilds identical data from the same repository scripts (constraints C6 and D-08). Its distributional parameters are calibrated against RideAustin~\cite{rideaustin-data,zuniga2020rideaustin}---a real, open, CC0-licensed ride-hailing corpus of $\approx$1.49M trips (Austin, 2016--2017)---covering the four-tier vehicle mix (REGULAR 95.1\%, SUV 3.7\%, PREMIUM 0.9\%, LUXURY 0.3\%), per-trip ratings ($\approx$90\% coverage on completed trips), four-tier fare rates, and the $\approx$20\% evening-peak share (17:00--20:00, realised as 20.5\% in the sample).
+
+Real datasets were rejected on \emph{field fit}, a decisive criterion for a project graded on relationship modelling: NYC TLC high-volume FHV records~\cite{tlctripdata} carry no passenger identity, no payment method, and no driver--vehicle 1:1 binding---precisely the relationship columns this schema exists to enforce. To our knowledge, RideAustin is the only public dataset offering per-trip ratings, service tier, and both party IDs simultaneously, which is why it serves as the calibration source rather than the corpus itself. The sample scale is 60{,}000 trips over 365 days (satisfying G1 with margin), of which 1{,}442 \texttt{completed} trips deliberately lack payments so that the reconciliation anti-join is non-empty and verifiable (G4). Two honest caveats: the pickup-zone distribution (15 zones, top-3 $\approx$35\%) is a course setting without a calibration source and is declared as such; and an 80/20 calibration/holdout split of RideAustin underpins the distributional comparison reported in Section~\ref{sec:eval} (decision D-12).
