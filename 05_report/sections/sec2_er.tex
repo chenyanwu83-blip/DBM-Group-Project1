@@ -1,24 +1,26 @@
-% ============================================================
-% §2 Entity-Relationship Model — B 主笔 · 页数预算 2.0 · 素材 B2–B5
-% ER 关（11-02）检查项：官方约定遵循 / 每个扩展实体有业务理由 / 与 §1 目标呼应
-% ============================================================
+% Section 2 — B, 2026-11-03. Model source: er_final.drawio; B4/B5/B6 notes in 01_docs.
+% Figure is a vector PDF with embedded Times New Roman, derived from the same eight-table model.
+% C's B6 joint sign-off is pending. Do not describe it as already signed.
 \section{Entity-Relationship Model}
 \label{sec:er}
 
 \subsection{Notation and Conventions}
-% TODO(B): 官方约定遵循说明——矩形实体、属性入框、主键斜体、外键以 *id 标注、连线标基数、N:M 拆关联实体
-TODO(B): 段落。
+Figure~\ref{fig:er-final} shows our eight-entity model. As required by the course handout~\cite{cds534requirement}, rectangles contain attributes, primary keys are italic, foreign keys carry an asterisk, and every link has a cardinality label. There is no direct many-to-many link. The five official entities remain unchanged; three separate extension tables implement the group's approved pickup-zone and service-tier questions (D-11).
 
-\subsection{Baseline Model: Five Entities}
-% TODO(B): 五实体 ER 矢量图（draw.io 导出 PDF，勿用位图）+ 实体/属性/键说明
-% 关键基数：Passenger–Trip 1:N / Driver–Trip 1:N / Driver–Vehicle N:1（vehicle_id UNIQUE）/ Trip–Payment 1:1（trip_id UNIQUE）
-TODO(B): 图~\ref{fig:er-baseline}。
+\begin{figure}[tbp]
+  \centering
+  \includegraphics[width=\textwidth]{er_final.pdf}
+  \caption{Final ER v1.0. Blue boxes are the five official Topic 5 tables; green boxes are the D-11 extensions. A label such as $1{:}0..1$ records the optional side allowed by the SQL constraints.}
+  \label{fig:er-final}
+\end{figure}
 
-\subsection{Extensions}
-% TODO(B): B3 表决通过的扩展，每张扩展表写一句业务理由 + 对查询的价值；未通过的方案写一句取舍说明
-% 提示：扩展表 DDL 一律进 build.sql 第 3 节扩展区，底座永不修改（D-07/协作铁律）
-TODO(B): 段落。
+\subsection{Official Five-Entity Base}
+\texttt{Passenger} and \texttt{Driver} each link to many \texttt{Trip} rows through the required \texttt{psg\_id} and \texttt{driver\_id} foreign keys. Under D-05, a Trip row starts when a driver accepts the request; \texttt{start\_time} therefore represents acceptance, not passenger boarding. Each \texttt{Driver} references one \texttt{Vehicle}. The official \texttt{Driver.vehicle\_id UNIQUE} constraint also limits a vehicle to at most one recorded driver, despite the broader $N{:}1$ label in the teacher's sample figure. Each \texttt{Payment} references one Trip, while \texttt{Payment.trip\_id UNIQUE} permits zero or one payment per Trip. The zero case supports the official query for completed but unpaid trips. These are the actual cardinalities enforced by Listing~17, not additional assumptions.
+
+\subsection{Approved Extensions}
+The \texttt{pickup\_zone} table gives each accepted trip one named pickup zone through \texttt{trip\_detail.zone\_id}. It supports q09, which counts all accepted Trip rows, including later cancellations; it cannot measure unmatched requests or unmet demand. The \texttt{service\_tier} table stores the four original RideAustin tier names and a descriptive fare multiplier. Its link through \texttt{trip\_detail.service\_tier\_id} supports q10: completed-trip count, average fare, valid per-trip rating count and average rating by tier. The rating is the passenger's rating of this trip, not a driver's historical average. These two dimensions and the nullable rating live in \texttt{trip\_detail}, whose \texttt{trip\_id} is both primary and foreign key. Thus the SQL allows at most one detail row per Trip; the fixed-seed generator supplies exactly one. The generator also keeps ratings on completed trips only. Those cross-table rules are checked in data validation, not enforced by the rating-range \texttt{CHECK} alone.
 
 \subsection{Normalization}
-% TODO(B): B5 逐表 1NF/2NF/3NF 判定与理由 + 一个传递依赖消除示例（用本项目表举例，供概念题 Q2 复用）
-TODO(B): 段落。
+We checked all eight tables using the 1NF--3NF tests taught in Lecture~08. Each column holds one value, so the tables satisfy 1NF. Every declared candidate key is a single column; no non-key attribute can depend on only part of a composite key, so they satisfy 2NF. Names of passengers, drivers, tiers and zones are stored in their own entity tables rather than repeated with every Trip; under the stated business dependencies, no non-key attribute depends transitively on a key within one table, so the present schema satisfies 3NF. The detailed table-by-table check is recorded in \texttt{01\_docs/b5\_normalization\_review.md}.
+
+For a concrete 3NF example, suppose an unnormalised \texttt{TripRaw} also stored \texttt{psg\_name}. The dependencies would be \texttt{trip\_id} $\rightarrow$ \texttt{psg\_id} $\rightarrow$ \texttt{psg\_name}. Since one passenger may take many trips, \texttt{psg\_id} is not a key of \texttt{TripRaw}; the name would be repeated and could be updated inconsistently. Our existing \texttt{Passenger(psg\_id, name)} and \texttt{Trip(trip\_id, psg\_id, ...)} tables remove that transitive dependency while keeping the link through a foreign key. No change to the teacher's five-table DDL is needed.
