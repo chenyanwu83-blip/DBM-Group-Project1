@@ -12,3 +12,7 @@
 |---|---|
 | E1/E4 | 每次全组会（kickoff、M1–M4）纪要在此归档 |
 | A2/A3/B4 等 | 里程碑通过的决策汇总进设计决策登记表 |
+
+## B4 模型冻结交付
+
+`b4_data_dictionary.md` 是 B 的八表完整数据字典、`build.sql` §1/§3 逐关系对账及 D-12 执行注释；可编辑 ER 和矢量图见 `04_figures/er_final.drawio`、`04_figures/er_final.svg`。B4 于 2026-11-03 完成模型对账。B6 与 C 的运行复验及联签、D 的留出 20% 数字对照须另行验收。
