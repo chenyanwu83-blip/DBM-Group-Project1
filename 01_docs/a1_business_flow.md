@@ -79,7 +79,7 @@ flowchart TD
 
 ## 3. 给 B 的三条建模提示（对应官方得分点）
 
-1. **两条特殊基数**来自流程本身：派单时司机必须已绑车 → `Driver:Vehicle = N:1`（`Driver.vehicle_id UNIQUE`；老师图标 N:1，UNIQUE 下实为 1:1）；每笔行程（无论车费还是取消费）至多一笔支付 → `Trip:Payment = 1:1`（`Payment.trip_id UNIQUE`）。
+1. **两条特殊基数**来自流程本身：派单时司机必须已绑车 → `Driver:Vehicle = N:1`（`Driver.vehicle_id UNIQUE`；老师文字 N:1、示例图连线 1:N，UNIQUE 下实为 1:1——见 B4 v1.0.1）；每笔行程（无论车费还是取消费）至多一笔支付 → `Trip:Payment = 1:1`（`Payment.trip_id UNIQUE`）。
 2. **status 建议值**：官方仅要求 `completed` 能被过滤（`status` 为无约束 `VARCHAR(20)`）；库内建议值 `accepted / en_route / completed / canceled`（**小组约定，D-05 下不存在 requested**）。值域 CHECK 已有定论（B4 数据字典）：**`status` 不加值域 CHECK**——取值是组内约定而非官方 DDL 强制，保持官方 DDL 原样（另一顾虑：<8.0 版本 CHECK 被静默忽略）。
 3. **Q2 的业务来源是支付挂起，不是取消**：官方 Q2 只筛 `completed` 且无 Payment 的行程（漏付/挂账，需对账催收）；`canceled` 行不进 Q2（被 WHERE 排除）——无论其有无取消费 Payment。另：匹配阶段取消的订单不入库（D-05 取舍），涉及"下单量"的分析超出本库能力，写作时列入已知局限。
 
