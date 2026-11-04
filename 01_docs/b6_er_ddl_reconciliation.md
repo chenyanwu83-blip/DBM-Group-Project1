@@ -30,10 +30,14 @@
 
 ## 3 与运行证据的对应
 
-C5 已上传八表 `SHOW CREATE TABLE` 与行数截图，以及 `row_counts_1101.png`。截图显示 Passenger 3,000、Vehicle 150、Driver 150、Trip 60,000、Payment 51,398、service_tier 4、pickup_zone 15、trip_detail 60,000。这证明当次 C 的库里有八张表及相应样本行；**单张行数截图不证明所有 FK/UNIQUE/CHECK 均正确**，结构证据应由 C 对照各表的 `SHOW CREATE TABLE` 图或真机输出复核。
+C5 已上传八表 `SHOW CREATE TABLE` 与行数截图，以及 `row_counts_1101.png`。截图显示 Passenger 3,000、Vehicle 150、Driver 150、Trip 60,000、Payment 51,398、service_tier 4、pickup_zone 15、trip_detail 60,000。这证明当次 C 的库里有八张表及相应样本行。
+
+**B 于 2026-11-04 增补截图核查：**逐张读了 `03_data/screenshots/ddl/ddl_*_1101_a.png` 八张结构图。截图中的官方五表仍为原字段；`Driver.vehicle_id` 与 `Payment.trip_id` 均有 `UNIQUE` 和对应 FK；`Trip` 的两条 FK 均在；扩展层有 `service_tier.name UNIQUE`、`pickup_zone.name UNIQUE`、`trip_detail.trip_id` PK+FK、两条维度 FK 和 `rating BETWEEN 1 AND 5` CHECK。与本清单和 `build.sql` §1/§3 的相应约束一致。截图只能证明 **11-01 当次运行库**，不能代替 C 对当前运行库的联签或 C8 的独立干净复跑。
+
+**B 于 2026-11-04 增补查询适配核查：**`02_sql/queries/q09_hot_zones.sql` 使用全 Trip 行按上车区域计数；`q10_service_tier_rating.sql` 仅筛 `completed`，分别计算完成数、平均 `Trip.fare`、非空评分数与平均评分。字段连接及口径符合 D-11 和本 ER 模型。两份 SQL 的注释仍写“待 C4 数据验证”，但仓库已经有 D3 的查询结果和截图；这属于 D 的注释更新，不改变 B6 对账结论。
 
 ## 4 联签请求与结论边界
 
 - **B 已核对：** 模型、字典与当前仓库脚本的八表 26 列和七条关系一致；图注如实说明老师示例标签与官方 DDL 的实际可选基数差别。
-- **待 C 确认：** `build.sql` §3 当前标记 `schema v1.0-rc`；请 C 按本清单复核运行版八表结构、特别是 `trip_detail.trip_id` PK+FK、两条维度 FK、`rating` CHECK，并确认是否可把 rc 标记转为 v1.0。C 的确认日期/方式或提交号：**待填**。
+- **待 C 确认：** `build.sql` §3 当前标记 `schema v1.0-rc`；八张 11-01 的 `SHOW CREATE TABLE` 截图已由 B 核对。请 C 确认**当前运行版**仍与这些截图及本清单一致、是否可把 rc 标记转为 v1.0，并在本件记录联签日期/方式或提交号：**待填**。
 - **B6 状态：** B 单方核对完成，**双方联签未完成**。C8 的另一人独立干净复跑是另一个验收任务，不能从本清单推定完成。
