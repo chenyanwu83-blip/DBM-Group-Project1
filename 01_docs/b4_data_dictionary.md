@@ -1,10 +1,10 @@
-# B4 ER v1.0 数据字典与 DDL 对账
+# B4 ER v1.0.1 数据字典与 DDL 对账
 
-**负责人：B｜冻结日期：2026-11-03｜依据：老师 Topic 5 Listing 17、D-05、D-06 v1.2、D-11、D-12、`02_sql/build.sql` §1/§3（C3 v1.0-rc）**
+**负责人：B｜模型冻结日期：2026-11-03｜图示记法修订：2026-11-04，ER v1.0.1（八表结构不变）｜依据：老师 Topic 5 Listing 17、D-05、D-06 v1.2、D-11、D-12、`02_sql/build.sql` §1/§3（C3 v1.0-rc）**
 
 本字典与 `04_figures/er_final.drawio` 使用同一八表结构。前五表为老师的官方底座，字段与建库脚本第 1 节一致；后三表为小组表决通过的扩展层，字段与第 3 节一致。B4 冻结的是**模型与字段口径**；C 的运行复验、D 的查询及留出集数字对照须分别验收。
 
-记号：PK=主键；FK=外键；`UNIQUE`=唯一；“可空”只表示 DDL 没有 `NOT NULL`，不表示业务必定产生空值。图中斜体主键、`*` 外键和基数标注遵循老师第 4 节约定。
+记号：PK=主键；FK=外键；`UNIQUE`=唯一；“可空”只表示 DDL 没有 `NOT NULL`，不表示业务必定产生空值。图中斜体主键、`*` 外键和 `1:1`、`1:N`、`N:1` 基数标注遵循老师第 4 节约定。**图上的 `1:1` 表示最大配对数，不表示双方都必须有记录**；实际可选性在下表逐条写明。Lecture 02 另教过 `(min,max)` 记法，但本图不混用未在老师作业示例中出现的 `1:0..1` 写法。
 
 ## 1 官方底座五表
 
@@ -90,13 +90,15 @@
 |---|---|---|---|
 | Passenger → Trip | `Trip.psg_id NOT NULL` + FK | 每 Trip 恰一乘客；每乘客 0..N Trip | — |
 | Driver → Trip | `Trip.driver_id NOT NULL` + FK | 每 Trip 恰一司机；每司机 0..N Trip | D-05：司机接单后才入库 |
-| Vehicle → Driver | `Driver.vehicle_id NOT NULL UNIQUE` + FK | 每司机恰一车辆；每车辆 0..1 司机 | 老师示意图的 N:1 标签与 `UNIQUE` 的实际最大基数不同；以官方 SQL 为实现事实 |
+| Vehicle → Driver | `Driver.vehicle_id NOT NULL UNIQUE` + FK | 每司机恰一车辆；每车辆 0..1 司机 | 老师文字描述为 Driver→Vehicle N:1，Figure 5 的连线写 1:N；但 Listing 17 的 `UNIQUE` 将实际最大配对限制为 1:1，以官方 SQL 为实现事实 |
 | Trip → Payment | `Payment.trip_id NOT NULL UNIQUE` + FK | 每 Payment 恰一 Trip；每 Trip 0..1 Payment | 官方 Q2 需要已完成但尚无 Payment 的 Trip；D-06 免费取消无 Payment |
 | Trip → trip_detail | `trip_detail.trip_id` 同时 PK + FK | 每 detail 恰一 Trip；每 Trip 0..1 detail | C4 生成器保证每 Trip 恰一 detail，须数据验收 |
 | service_tier → trip_detail | `service_tier_id NOT NULL` + FK | 每 detail 恰一档；每档 0..N detail | 对应 q10 |
 | pickup_zone → trip_detail | `zone_id NOT NULL` + FK | 每 detail 恰一区；每区 0..N detail | 对应 q09 |
 
-核对结果：八张表、26 个列、七条关系与 `build.sql` §1/§3 一致；官方五表未增加列。`Driver.vehicle_id UNIQUE` 和 `Payment.trip_id UNIQUE` 的实际基数与老师示意标签的差异已在图注保留，不隐瞒。**B4 模型对账完成；B6 与 C 的运行结果及联签仍单独进行。**
+核对结果：八张表、26 个列、七条关系与 `build.sql` §1/§3 一致；官方五表未增加列。`Driver.vehicle_id UNIQUE` 和 `Payment.trip_id UNIQUE` 的实际基数与老师示意标签的差异已在图注保留，不隐瞒。**B4 模型对账完成；B6 实质对账已完成，C 本人仓库联签仍待留存。**
+
+**2026-11-04 图示勘误：**早先的报告 PDF 把可选性直接写在连线比值中（如 `1:0..1`），而可编辑图曾用 `1:1*`，三个图版本不一致，且 `*` 与“外键”记号冲突。ER v1.0.1 统一将三条最大一对一关系标为课程常用的 `1:1`，在图注和本字典说明谁可以缺席。只更正表达方式，不修改字段、外键、生成器或 `build.sql`。
 
 ## 4 查询与数据对照执行注释（供 C、D、E 扫盘）
 
@@ -110,7 +112,7 @@
 
 ## 5 交付与后续
 
-- **给 C：** 以本字典和 `er_final.drawio` 核对第 3 节扩展表；确认后将脚本注释中的 `v1.0-rc` 转为正式版，并与 B 做 B6 联签。实际 MySQL 建库/导数由 C 验收。
+- **给 C：** C 已口头确认当前建表结构未改、语句依照 B 的字典；请 C 在 B6 记录中自行留名，并决定是否把脚本注释中的 `v1.0-rc` 转为正式版。实际 MySQL 建库/导数仍由 C 验收。
 - **给 D：** 按上述口径实现 q09/q10；B5 范式论证和 B6 对账结果随后供 D 的概念问答引用。
 - **给 E：** 将最终 ER 放入报告 §2，按 B 的最终字典撰写实体、键、基数和约束说明；D-12 一页对照只在数字真正产生后写“已验证”。
 
