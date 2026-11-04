@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1750" height="1060" viewBox="0 0 1750 1060">
 <rect width="1750" height="1060" fill="white"/>
 <style>text{font-family:Times New Roman,serif;fill:#203049}.head{font-weight:bold;font-size:23px}.body{font-size:18px}.small{font-size:15px;fill:#45566B}.card{font-size:17px;fill:#9B2626}</style>
-<text x="875" y="50" text-anchor="middle" class="head">Ride-Hailing ER v1.0</text>
-<text x="875" y="80" text-anchor="middle" class="small">Official five-table base + D-11 extension layer · 3 November 2026</text>
+<text x="875" y="50" text-anchor="middle" class="head">Ride-Hailing ER v1.0.1</text>
+<text x="875" y="80" text-anchor="middle" class="small">Notation clarified 4 November 2026; eight-table schema unchanged</text>
 <line x1="340" y1="337" x2="470" y2="337" stroke="#40516B" stroke-width="2"/>
 <line x1="960" y1="357" x2="790" y2="357" stroke="#40516B" stroke-width="2"/>
 <line x1="1525" y1="210" x2="1122" y2="275" stroke="#40516B" stroke-width="2"/>
@@ -56,16 +56,16 @@
 <text x="402" y="348" text-anchor="middle" class="card">1 : N</text>
 <rect x="805" y="335" width="125" height="34" fill="white"/>
 <text x="867" y="358" text-anchor="middle" class="card">N : 1</text>
-<rect x="1260" y="215" width="125" height="34" fill="white"/>
-<text x="1322" y="238" text-anchor="middle" class="card">1 : 1*</text>
+<rect x="1300" y="215" width="70" height="34" fill="white"/>
+<text x="1335" y="238" text-anchor="middle" class="card">1 : 1</text>
 <rect x="635" y="540" width="125" height="34" fill="white"/>
-<text x="697" y="563" text-anchor="middle" class="card">1 : 1*</text>
+<text x="697" y="563" text-anchor="middle" class="card">1 : 1</text>
 <rect x="835" y="535" width="125" height="34" fill="white"/>
-<text x="897" y="558" text-anchor="middle" class="card">1 : 1*</text>
-<rect x="1315" y="625" width="125" height="34" fill="white"/>
-<text x="1377" y="648" text-anchor="middle" class="card">1 : N</text>
-<rect x="1320" y="820" width="125" height="34" fill="white"/>
-<text x="1382" y="843" text-anchor="middle" class="card">1 : N</text>
-<text x="875" y="985" text-anchor="middle" class="small">Italic = primary key; * = foreign key. 1:1* means SQL allows 0..1 on the parent side. Driver.vehicle_id UNIQUE limits Vehicle to 0..1 Driver.</text>
+<text x="897" y="558" text-anchor="middle" class="card">1 : 1</text>
+<rect x="1315" y="650" width="70" height="34" fill="white"/>
+<text x="1350" y="673" text-anchor="middle" class="card">1 : N</text>
+<rect x="1315" y="805" width="70" height="34" fill="white"/>
+<text x="1350" y="828" text-anchor="middle" class="card">1 : N</text>
+<text x="875" y="985" text-anchor="middle" class="small">Italic = primary key; * = foreign key. 1:1 shows maximum pairing; a Trip may have no Payment/detail and a Vehicle may have no Driver.</text>
 <text x="875" y="1020" text-anchor="middle" class="small">Trip starts at driver acceptance (D-05). Generated data gives each Trip one trip_detail; the PK/FK itself ensures only at most one.</text>
 </svg>
