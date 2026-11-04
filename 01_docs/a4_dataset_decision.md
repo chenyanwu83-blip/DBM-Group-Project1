@@ -2,8 +2,9 @@
 
 > 陈祎楠 / 角色 A · 2026-10-22 · **状态：定稿——路线 B（固定 seed 生成器）不变，标定来源由 NYC TLC 升级为 RideAustin 真实开源数据**
 > **v1.2 勘误（2026-10-23）**：A/B 实测可按 RIDE_ID 行级 JOIN（旧"不同轴"结论作废）、费率实为四档结构、覆盖率/占比按全量实测校准——明细见 [a4_rideaustin_profile.md](a4_rideaustin_profile.md)
+> **v1.3（2026-11-04）**：§五整节重写——对齐 C3 实现（`build.sql` §3）与 B4 冻结口径：D-11 两项扩展由 `trip_detail`（1:1）+ `service_tier`/`pickup_zone` 两张字典表承载，**官方五表零增列**；旧"trip 增列"草案作废。§〇–§四未动。
 > 回应老师问询「数据现成还是生成」：**生成**（`import_data.py` 固定 seed），**分布参数标定自真实运营数据**（RideAustin，DOI 可引用）。
-> 交 C 落地（C4 import_data.py，截止 10-25）；B3/B4 据第五节即可开工。
+> 交 C 落地（C4 import_data.py，截止 10-25）；B3/B4 据第五节即可开工（历史记录，v1.3 时语）。
 
 ## 〇、标定数据集档案（RideAustin）
 
@@ -67,23 +68,67 @@
 - [ ] **留出验证对照表**（10-23 组内收敛）：D 同机产出"生成 60,000 行 vs RideAustin 留出段"分布对照（可比维度清单见实测档案 §七），报告 §5 引用；E 登记标定-留出方案（D-10 附注或 D-11）
 - [ ] E3 收档：References 收录数据 DOI + 论文 DOI；报告 §1.4 数据来源声明（回应老师问询）
 
-## 五、B3 扩展二落地（ServiceTier + 评分）
+## 五、B3 扩展落地（v1.3 重写：三表方案，官方五表零增列）
 
-B 的 B3 采用"服务档次 + 乘客评分"扩展，与本数据集对齐（档名保留数据原生英文名，报告可注中文对照，勿未定义直译"快车/专车"）：
+> **对齐说明（2026-11-04）**：本节 10-22 原稿形态为 `ALTER TABLE trip` 增列 `service_tier_id`/`rating`——已被后续演进取代，**旧增列草案作废**。现行口径三处铁证：**C3 已实现**（`build.sql` §3，schema v1.0-rc，2026-10-25）、**B4 已冻结**（ER v1.0：八表 26 列，2026-11-03）、**B6 已对账**（"§1 同名五表；未增列"）。D-11 两项扩展（①上车区位 ②服务档次×评分）由**独立扩展表 `trip_detail`（与 Trip 1:1）单表承载 + 两张字典表**实现，**官方五表零增列**（底座铁律）。q09/q10（D2 v1.1）已按本口径落号。
+
+### 落地表结构（以 `build.sql` §3 为准）
 
 ```sql
+-- 3.1 服务档次字典（4 行，seed 随 build.sql 下发——档名/区名属 schema 语义
+--     而非工作负载数据，五机一致不依赖 Python）
 CREATE TABLE service_tier (
-  tier_id   TINYINT UNSIGNED PRIMARY KEY,
-  name      VARCHAR(16) NOT NULL UNIQUE,      -- REGULAR / SUV / PREMIUM / LUXURY
-  fare_multiplier DECIMAL(3,1) NOT NULL       -- 课程演示设定：1.0 / 1.5 / 2.0 / 2.5
+    tier_id          TINYINT UNSIGNED PRIMARY KEY,
+    name             VARCHAR(16)  NOT NULL UNIQUE,  -- REGULAR/SUV/PREMIUM/LUXURY
+    fare_multiplier  DECIMAL(3,1) NOT NULL          -- 描述列，非计算列
+);
+-- 档名保留 RideAustin 原生英文名，报告可注中文对照，勿未定义直译"快车/专车"。
+-- fare_multiplier = 按 total_fare 均值口径的实测相对倍数 1.0/1.9/2.1/2.7
+-- （a4_rideaustin_profile §六）；生成车费直接用 §三四档真实费率，不经此列计算。
+
+-- 3.2 上车区域字典（15 行，D-11①）——课程设定：约 15 区、头部集中 top3 ≈35%，
+--     参照 NYC TLC 空间集中度；RideAustin 无区位字段、无真实标定源，报告如实声明
+CREATE TABLE pickup_zone (
+    zone_id  TINYINT UNSIGNED PRIMARY KEY,
+    name     VARCHAR(32) NOT NULL UNIQUE            -- Downtown / East Austin / …（B4 可改名、勿改 zone_id）
 );
 
-ALTER TABLE trip
-  ADD COLUMN service_tier_id TINYINT UNSIGNED NOT NULL,
-  ADD CONSTRAINT fk_trip_tier FOREIGN KEY (service_tier_id) REFERENCES service_tier(tier_id),
-  ADD COLUMN rating TINYINT UNSIGNED NULL,    -- 乘客给司机的评分，可为空（completed 行 ≈90.7% 有值，生成覆盖率取 90%，D-11②；v1.2 勘误：旧注释 92.6% 系空置率误记）
-  ADD CONSTRAINT chk_rating CHECK (rating BETWEEN 1 AND 5),
-  ADD CONSTRAINT chk_rating_status CHECK (status = 'completed' OR rating IS NULL);
+-- 3.3 行程扩展表：主键即外键 → Trip 1:1（每 Trip 至多一行；C4 生成器保证恰一行）
+CREATE TABLE trip_detail (
+    trip_id         INT PRIMARY KEY,                -- PK 即 FK → 1:1
+    service_tier_id TINYINT UNSIGNED NOT NULL,      -- 请求属性，接单时已确定（取消行也有）
+    zone_id         TINYINT UNSIGNED NOT NULL,      -- 上车区位（q09 热区统计）
+    rating          TINYINT UNSIGNED NULL,          -- 乘客评司机 1–5 星；仅 completed 行
+                                                   -- 有值 ≈90%（生成覆盖率取 90%，D-11②）
+    FOREIGN KEY (trip_id)         REFERENCES Trip (trip_id),
+    FOREIGN KEY (service_tier_id) REFERENCES service_tier (tier_id),
+    FOREIGN KEY (zone_id)         REFERENCES pickup_zone (zone_id),
+    CONSTRAINT chk_rating CHECK (rating BETWEEN 1 AND 5)
+);
 ```
 
-扩展二目标查询（D 可预排）：按档次统计已完成行程数、平均 `fare`、收到评分行程数（`COUNT(rating)`）、平均评分（`AVG(rating)` 自动忽略 NULL）——展示 NULL 语义 + 分组聚合。
+**ER 基数 ↔ SQL 约束映射**（C3 验收口径）：
+
+- ServiceTier 1─N Trip ↔ `trip_detail.service_tier_id NOT NULL + FK`
+- PickupZone 1─N Trip ↔ `trip_detail.zone_id NOT NULL + FK`
+- Trip 1─1 TripDetail ↔ `trip_detail.trip_id` 即 PK 又是 FK（主键即外键 → 每 Trip 至多一行扩展）
+
+**生成器侧不变量**（`import_data.py`/C4 保证，schema 不强制）：
+
+- ① 每 Trip 恰一行 trip_detail（**含取消行**：档次/区位是请求属性，接单时已确定；q09 按 D-11①"已接单口径"统计全部 Trip 行）；
+- ② rating 仅 `Trip.status='completed'` 行非 NULL。该规则是**跨表语义：CHECK 无法引用他表列**（status 在 Trip 表、rating 在 trip_detail），触发器超出课程范围——由生成器保证并在 B4 数据字典记载，报告可作为"约束表达能力边界"的讨论点。
+
+### 与旧增列草案的差异（为什么改）
+
+| 项 | 旧草案（10-22，作废） | 现行（C3 实现 + B4 冻结） |
+|---|---|---|
+| 承载方式 | `ALTER TABLE trip` 加 `service_tier_id`/`rating` 两列 | `trip_detail` 独立表 1:1 承载，**五表零增列** |
+| 官方五表 | 结构被修改 | 结构不动（底座铁律；B6 对账 ✓） |
+| 区位扩展① | 本节未涉及（§三只有参数） | 同一张 trip_detail（`zone_id`）+ pickup_zone 字典 |
+| "仅 completed 可评分"约束 | 表内 CHECK 可表达（status 同表） | 跨表语义 CHECK 不可表达 → 生成器保证（见上） |
+| fare_multiplier | 课程演示设定 1.0/1.5/2.0/2.5 | 实测描述列 1.0/1.9/2.1/2.7（§六实测口径） |
+
+### 扩展目标查询（q09/q10，D2 v1.1 已按本口径落号；各只需经 trip_detail 一个 JOIN）
+
+- **q10（扩展二）**：按档次统计已完成行程数、平均 `fare`、收到评分行程数（`COUNT(rating)`）、平均评分（`AVG(rating)` 自动忽略 NULL）——展示 NULL 语义 + 分组聚合；
+- **q09（扩展一）**：按 zone 统计已接单行程数（D-11①口径：全部 Trip 行，含接单后取消；结论只答"哪里已接单最多"，**不得推出"哪里最缺司机"**——无司机接单的请求不生成 Trip、统计不到，进报告局限）。
