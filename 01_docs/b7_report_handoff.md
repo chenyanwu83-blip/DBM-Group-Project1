@@ -15,4 +15,3 @@
 - **给 A 和 E（同一 §1 的 Dataset Selection Rationale 末句）：**原文称 80/20 留出对照“reported in Section 5”，但现有 §5 仍全是 `TODO(D)`，`03_data/source/README.md` 也说明当前生成参数仍取全量资料。取得训练段专用参数和留出 20% 数字之前，请改成“planned”或等事实完成后再写“reported”；不能把同一全量统计同时称作独立验证。
 - **给 D 和 E（`05_report/sections/sec5_eval.tex`）：**整节实验和分布对照仍待写；按 D-12，生成数据与留出段的车型占比、已完成行程车费、评分覆盖与分布、高峰份额须单独给数字。车费和评分限定已完成行程，时间字段要同义且时区一致；业务查询结果与分布对照分开写。
 - **给 E（`05_report/main.tex`）：**封面 `\middot` 在当前 pdfLaTeX 配置下导致编译错误，组名仍是 `TODO-GroupName`，全文 Times New Roman 也未完成统一验证。`main.tex` 属 E；B 不改主文件。请 E 合稿后提供编译成功的完整 PDF，B 再执行 B8 全文复核。
-- **给 A（`01_docs/a4_dataset_decision.md` §五）：**旧草案仍含 `ALTER TABLE trip` 增列；D-11 的最终决定和 C 的 `build.sql` §3 已采用独立 `trip_detail`、`service_tier`、`pickup_zone` 三表。请把旧段标为历史提案或回填最终方案，避免扫盘者误当成现行建库说明。
