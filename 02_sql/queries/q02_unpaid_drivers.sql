@@ -1,4 +1,4 @@
--- Drivers with Completed but Unpaid Trips (NOT EXISTS anti-join)
+-- drivers who have completed but unpaid trips
 SELECT DISTINCT
        d.driver_id,
        d.name

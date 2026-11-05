@@ -29,7 +29,7 @@ Q5 & Unpaid $>$24h completed trips & Trip, Payment & Anti-join + time filter \\
 Q6 & Peak-hour order volume & Trip & GROUP BY + HAVING \\
 Q7 & Monthly revenue trend & Trip, Payment & Monthly GROUP BY + SUM \\
 Q8 & Repeat passengers & Passenger, Trip & COUNT(DISTINCT) + HAVING \\
-Q9 & Accepted trips per pickup zone & Trip, trip\_detail, pickup\_zone & JOIN + ORDER BY (D-11) \\
+Q9 & Accepted trips per pickup zone & Trip, trip\_detail, pickup\_zone & JOIN + ORDER BY \\
 Q10 & Service tier $\times$ rating & Trip, trip\_detail, service\_tier & Aggregates + NULL semantics \\
 \bottomrule
 \end{tabular}
@@ -53,7 +53,7 @@ ORDER BY t.start_time DESC;
 \end{figure}
 
 \paragraph{Q2: Drivers with completed but unpaid trips.}
-The collections list. A \texttt{NOT EXISTS} anti-join keeps exactly those completed trips that have no Payment row; \texttt{DISTINCT} collapses them to the driver level. Note the scope: cancelled trips with the \$1.50 fee already carry exactly one Payment (design decision D-06) and are therefore outside this list --- this query targets genuinely uncollected completed fares.
+The collections list. A \texttt{NOT EXISTS} anti-join keeps exactly those completed trips that have no Payment row; \texttt{DISTINCT} collapses them to the driver level. Note the scope: cancelled trips with the \$1.50 fee already carry exactly one Payment  and are therefore outside this list --- this query targets genuinely uncollected completed fares.
 
 \begin{lstlisting}[caption={Q2 --- completed but unpaid drivers (NOT EXISTS).}]
 SELECT DISTINCT d.driver_id, d.name
@@ -184,9 +184,9 @@ ORDER BY active_days DESC, total_trips DESC;
 \end{figure}
 
 \paragraph{Q9: Accepted trips per pickup zone.}
-The spatial view enabled by the \texttt{trip\_detail} extension. The top three zones --- Downtown (16.9\%), West Campus (9.4\%) and South Congress (8.2\%) --- absorb 34.6\% of accepted trips, matching the calibrated spatial concentration of $\approx$35\%. Per decision D-11 this counts \emph{accepted} trips only: requests that never received a driver are outside the data and cannot be inferred (Section~\ref{sec:conclusion}).
+The spatial view enabled by the \texttt{trip\_detail} extension. The top three zones --- Downtown (16.9\%), West Campus (9.4\%) and South Congress (8.2\%) --- absorb 34.6\% of accepted trips, matching the calibrated spatial concentration of $\approx$35\%. This counts \emph{accepted} trips only: requests that never received a driver are outside the data and cannot be inferred (Section~\ref{sec:conclusion}).
 
-\begin{lstlisting}[caption={Q9 --- accepted trips per zone (D-11 basis).}]
+\begin{lstlisting}[caption={Q9 --- accepted trips per zone .}]
 SELECT z.zone_id, z.name,
        COUNT(*) AS accepted_trips
 FROM Trip t
@@ -203,7 +203,7 @@ LIMIT 15;
 \end{figure}
 
 \paragraph{Q10: Service tier $\times$ rating.}
-The product-line comparison, restricted to completed trips (D-11). \texttt{COUNT(rating)} counts only non-NULL values, so it yields the rating coverage, while \texttt{AVG(rating)} ignores NULLs automatically --- the NULL semantics of Section~\ref{sec:er} in action. The tier mix matches calibration (95.1/3.7/0.9/0.3\%); average fare climbs from \$13.85 to \$41.62 ($\approx$3$\times$) across tiers while ratings stay flat around 4.85 with $\approx$90\% coverage --- premium products monetize without hurting satisfaction.
+The product-line comparison, restricted to completed trips . \texttt{COUNT(rating)} counts only non-NULL values, so it yields the rating coverage, while \texttt{AVG(rating)} ignores NULLs automatically --- the NULL semantics of Section~\ref{sec:er} in action. The tier mix matches calibration (95.1/3.7/0.9/0.3\%); average fare climbs from \$13.85 to \$41.62 ($\approx$3$\times$) across tiers while ratings stay flat around 4.85 with $\approx$90\% coverage --- premium products monetize without hurting satisfaction.
 
 \begin{lstlisting}[caption={Q10 --- service tier vs.\ rating (completed only).}]
 SELECT st.name AS tier,

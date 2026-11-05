@@ -1,4 +1,4 @@
--- Peak-Hour Order Volume (GROUP BY + HAVING)
+-- hours with at least 2000 trips
 SELECT HOUR(start_time) AS hr,
        COUNT(*) AS trips
 FROM Trip

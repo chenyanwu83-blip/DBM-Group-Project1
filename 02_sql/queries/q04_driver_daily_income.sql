@@ -1,4 +1,4 @@
--- Driver Daily Income Ranking (window function RANK)
+-- top 10 driver-days by income
 SELECT driver_id,
        income_date,
        day_income,

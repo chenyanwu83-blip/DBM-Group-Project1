@@ -1,4 +1,4 @@
--- Total Fare Earned per Vehicle (3-table join + GROUP BY)
+-- total fare per vehicle across all trips
 SELECT v.plate,
        ROUND(SUM(t.fare), 2) AS total_fare,
        COUNT(*) AS trip_cnt

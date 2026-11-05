@@ -1,4 +1,4 @@
--- Completed Trips with Their Payments (1:1 join)
+-- completed trips with payment info
 SELECT t.trip_id,
        t.psg_id,
        t.driver_id,

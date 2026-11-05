@@ -1,4 +1,4 @@
--- Repeat Passengers (COUNT DISTINCT + HAVING)
+-- passengers active on 2+ distinct days
 SELECT p.psg_id,
        p.name,
        COUNT(*) AS total_trips,

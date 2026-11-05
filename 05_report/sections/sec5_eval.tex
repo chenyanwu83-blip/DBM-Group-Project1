@@ -1,21 +1,12 @@
-% ============================================================
-% §5 Evaluation — D 主笔、C 供数据 · 页数预算 1.5 · 素材 A5/D5/C6
-% 数字关（11-03）检查项：结论句挂的数字与截图/日志逐一对账
-% 实验数字统一由 D 本机产出（协作纪律 4），避免跨机性能差异
-% 状态：v1 定稿 2026-11-05（D）。全部数字已回填（索引16.6→0.46ms、JOIN 89/82/90ms）
-% 实验脚本：02_sql/exp_index.sql（实验①②）+ exp_concurrency.sql（实验③+G5）
-% 截图命名：exp_index_before/after_1103、exp_joinvsub_1103、exp_conc_*_1103、exp_g5_*_1103
-% ============================================================
+% §5 Evaluation — D 主笔 · 全部数字已回填
 \section{Evaluation}
 \label{sec:eval}
 
 \subsection{Workload Profile}
-% 素材：A3 v1.1（Top5 = Q6/Q1/Q5/Q2/Q7）+ A6 读写分流；TODO(A): A5 定稿后校对一行
-The workload follows the read/write split argued in Section~\ref{sec:context}: transactional writes (dispatch and payment) demand strong consistency, while analytical reads tolerate weaker freshness. The five most frequent queries are Q6 (hourly dispatch monitoring), Q1 (daily reconciliation), Q5 (periodic collections), Q2 (collections by driver) and Q7 (monthly reporting); all ten queries of Section~\ref{sec:sql} are read-only SELECTs, and writes concentrate on \texttt{Trip} and \texttt{Payment} at dispatch and settlement time.
+The workload splits along the lines argued in Section~\ref{sec:context}: dispatch and payment writes need strong consistency, while reporting queries can tolerate weaker freshness. Q6 (hourly dispatch), Q1 (daily reconciliation), Q5 (periodic collections), Q2 (collections by driver) and Q7 (monthly reporting) are the five most frequent queries. All ten queries in Section~\ref{sec:sql} are read-only SELECTs; writes go to \texttt{Trip} and \texttt{Payment} at dispatch and settlement time.
 
 \subsection{Experiment 1: Index Before/After}
-% 载体与判读依据：02_sql/exp_index.sql §1（C 预验值注释）；G2 靶子 P95<200ms
-The target query counts completed trips since 2026-10 (\texttt{status} equality + \texttt{start\_time} range). Before the index, the plan is a full table scan (\texttt{type=ALL}, key NULL, rows $\approx$60{,}261); a composite index \texttt{(status, start\_time)} --- leftmost prefix: equality column first, range column second --- changes the plan to an index range scan whose leaves already contain everything the query needs (\texttt{Using index}, covering scan).
+We picked a query that counts completed trips since 2026-10, combining a \texttt{status} equality check with a \texttt{start\_time} range condition. With no secondary index on those columns the plan is a full table scan (\texttt{type=ALL}, rows $\approx$60{,}261). After building a composite index on \texttt{(status, start\_time)} --- the equality column first, the range column second, following the leftmost-prefix rule --- the plan switches to an index range scan. The leaves already contain everything the query needs, so there is no table lookup at all (\texttt{Using index}).
 
 \begin{table}[h]
 \centering
@@ -39,17 +30,17 @@ after (composite)   & range & \texttt{idx\_trip\_status\_time} & 3{,}259  & 0.46
 \begin{minipage}{0.49\textwidth}\centering
 \includegraphics[width=\textwidth]{exp_index_after_1104.png}
 \end{minipage}
-\caption{Experiment 1 before/after: \texttt{type} ALL $\to$ range, \texttt{rows} 60{,}261 $\to$ 3{,}259 (screenshots \texttt{exp\_index\_*\_1104.png}).}\label{fig:exp1}
+\caption{Experiment 1 before/after: \texttt{type} ALL $\to$ range, \texttt{rows} 60{,}261 $\to$ 3{,}259.}\label{fig:exp1}
 \end{figure}
 
-The same experiment exposes the classic non-sargable trap: wrapping the column in a function (\texttt{DATE(start\_time) = '2026-10-15'}) degrades access to a full sequential index scan, while rewriting it as a half-open interval restores \texttt{type=range}. This directly justifies the hour-bucket rewrite note of Q6. Against the latency target G2 (P95 $<$ 200 ms), the indexed plan stays two orders of magnitude below the bar.
+The same session also showed the non-sargable trap. Wrapping the indexed column in a function (\texttt{DATE(start\_time) = '2026-10-15'}) forced a sequential scan of the whole index, while writing the condition as a half-open interval brought \texttt{type} back to \texttt{range}. Against the latency target G2 (P95 $<$ 200 ms), the indexed plan sits two orders of magnitude below the bar.
 
 \subsection{Experiment 2: JOIN vs Subquery}
-The anti-join ``completed trips without payment'' (Q2/Q5) is expressed three ways: \texttt{NOT EXISTS}, \texttt{NOT IN}, and \texttt{LEFT JOIN ... IS NULL}. All three return the same 1{,}442 rows, and their plans coincide: a full scan of \texttt{Trip} probe-joined against the unique index of \texttt{Payment.trip\_id} (\texttt{eq\_ref}), with \texttt{Extra: Not exists; Using index} --- the optimizer rewrote both subquery forms into the same anti-join as the explicit LEFT JOIN variant.
+``Completed trips without payment'' (Q2 and Q5) can be written three ways: \texttt{NOT EXISTS}, \texttt{NOT IN}, and \texttt{LEFT JOIN ... IS NULL}. All three returned the same 1{,}442 rows on our data, and the plans came out identical: a full scan of \texttt{Trip}, each row probed against the unique index on \texttt{Payment.trip\_id} (\texttt{eq\_ref}), with \texttt{Extra: Not exists; Using index} --- the optimizer had rewritten both subquery forms into the same anti-join as the explicit LEFT JOIN version.
 
 \begin{table}[h]
 \centering
-\caption{Three anti-join formulations: identical semantics, near-identical cost.}
+\caption{Three anti-join formulations on the same question.}
 \label{tab:exp2}
 \small
 \begin{tabular}{@{}llll@{}}
@@ -63,23 +54,30 @@ Formulation & result & plan signature & actual time \\
 \end{tabular}
 \end{table}
 
-One caveat travels with \texttt{NOT IN}: it is only safe when the subquery column is NOT NULL (\texttt{Payment.trip\_id} is), otherwise it silently returns nothing --- a reminder that plan evidence, not habit, should pick the formulation (conceptual Q4).
+\texttt{NOT IN} carries a caveat: the subquery column has to be NOT NULL for it to work correctly. \texttt{Payment.trip\_id} is, so all three are safe here; but if it allowed NULL the whole result would silently come back empty. That is the practical reason to check EXPLAIN before committing to one formulation (see Q4 in Section~\ref{sec:sql}).
 
 \subsection{Experiment 3: Concurrent Transactions}
-Two Workbench tabs simulate concurrent sessions on \texttt{trip\_detail} (row \texttt{trip\_id=92}, rating 3). \emph{Scenario 1 (lost update):} both transactions read 3 into session variables, A writes $3{+}1{=}4$ and commits, B then writes $3{-}1{=}2$ from its stale copy --- A's update vanishes although both statements reported success. \emph{Scenario 2 (pessimistic lock):} A's \texttt{SELECT ... FOR UPDATE} blocks B at the same statement; after A commits, B reads the committed value (current read) and both increments survive ($2 \to 3 \to 4$). \emph{Scenario 3 (isolation levels):} under the default REPEATABLE READ a transaction re-reads its snapshot (still 3) after another session commits a change, while READ COMMITTED sees the committed 5/3 flips --- snapshot reads versus current reads, exactly the behaviour that makes \texttt{FOR UPDATE} necessary in Scenario 2 (conceptual Q5).
+We used two Workbench windows connected to the same database, operating on row \texttt{trip\_id=92} of \texttt{trip\_detail} (initial rating 3).
+
+In the first scenario both sessions read the rating into their own variables, then wrote back computed values. Session A stored 3, added 1, and committed a 4. Session B, still holding its copy of 3, subtracted 1 and committed a 2 --- overwriting A's 4. Both UPDATE statements reported ``1 row(s) affected'', yet A's increment was gone.
+
+The second scenario replayed the same steps, except A locked the row with \texttt{SELECT ... FOR UPDATE} before writing. B's identical \texttt{FOR UPDATE} statement now blocked until A committed. Once unblocked, B read the committed value (3, not the stale copy) and added 1 again. Both increments survived: $2 \to 3 \to 4$.
+
+For the third scenario we switched to row \texttt{trip\_id=150}. Under the default REPEATABLE READ, a transaction that read the rating as 3 kept seeing 3 even after another session committed a 5 --- the snapshot does not update mid-transaction. Under READ COMMITTED the same sequence saw the committed 5, then saw the 3 after a second commit. This is exactly why plain SELECTs were not enough in scenario 2, and why \texttt{FOR UPDATE} was needed there.
 
 \begin{table}[h]
 \centering
-\caption{Concurrency scenarios and constraint interceptions (G5).}
+\caption{Concurrency scenarios and constraint interceptions.}
 \label{tab:exp3}
 \small
 \begin{tabular}{@{}lll@{}}
 \toprule
-Scenario & Observation & Guard demonstrated \\
+Scenario & Observation & What it shows \\
 \midrule
-Lost update (read-modify-write) & final rating 2, one update lost & --- (the failure mode) \\
-\texttt{SELECT ... FOR UPDATE} & B waits, then $2\to3\to4$ & row lock (isolation layer) \\
-RR vs.\ RC re-read & RR keeps snapshot 3; RC sees 5/3 & isolation-level semantics \\
+Lost update & final rating 2, one write lost & the failure mode \\
+\texttt{FOR UPDATE} & B waits, then $2\to3\to4$ & row lock fixes it \\
+RR re-read & still 3 after external commit & snapshot read \\
+RC re-read & sees 5, then sees 3 & reads latest commit \\
 FK to missing trip        & \texttt{ERROR 1452} & referential integrity \\
 Duplicate \texttt{trip\_id} payment & \texttt{ERROR 1062} & 1:1 via UNIQUE \\
 Rating out of 1--5 range  & \texttt{ERROR 3819} & CHECK constraint \\
@@ -87,15 +85,14 @@ Rating out of 1--5 range  & \texttt{ERROR 3819} & CHECK constraint \\
 \end{tabular}
 \end{table}
 
-The last three rows double as evidence for goal G5: the declared constraints themselves intercept illegal writes at the schema layer, independent of any application logic.
+The last three rows also serve as evidence for G5: the constraints themselves stop illegal writes at the schema layer, without any application code involved.
 
 \subsection{Distribution Check against the RideAustin Holdout}
-% 素材：01_docs/d5_holdout_comparison.md（D-12 口径；生成段数字 = Q6/Q10 实测 + 星级补充查询）
-Generator parameters were calibrated on the 80\% training split of RideAustin and checked against the held-out 20\% split (decision D-12).
+The generator parameters came from the 80\% training split of RideAustin; we then compared the generated 60{,}000 trips against the held-out 20\%.
 
 \begin{table}[h]
 \centering
-\caption{Generated sample (60{,}000 trips) vs.\ RideAustin holdout.}
+\caption{Generated sample vs.\ RideAustin holdout.}
 \label{tab:holdout}
 \small
 \begin{tabular}{@{}lll@{}}
@@ -110,7 +107,7 @@ Evening peak 17--20h share & $\approx$20.5\,\% & 22.4\,\% \\
 \end{tabular}
 \end{table}
 
-Deviations stay within about two percentage points on every comparable dimension; the check validates \emph{distribution consistency}, not the external validity of business conclusions. Status mix, payment methods and the unpaid rate follow course-defined rules and have no counterpart in the source data, so they are excluded by design.
+No dimension deviates by more than two percentage points. What this validates is distribution consistency, not the external validity of business conclusions. Status mix, payment methods and the unpaid rate follow course-defined rules with no counterpart in the source data, so we left them out of the table.
 
 \subsection{Results Summary and Goal Recheck}
-(1) The composite index cut estimated rows from 60{,}261 to 3{,}259 and actual latency from 16.6 ms to 0.46 ms ($\approx$36$\times$) --- far inside the 200 ms P95 target G2. (2) Three anti-join formulations agree in result (1{,}442 rows) and plan, so query choice is governed by semantics and EXPLAIN evidence rather than folklore. (3) Concurrency behaviour decomposes cleanly: the lost update is a read-modify-write artefact, \texttt{FOR UPDATE} eliminates it, and schema-level constraints (1452/1062/3819) intercept illegal writes without application help (G5). Together with the holdout check these results close the loop with the measurable goals of Section~\ref{sec:context}.
+The composite index brought estimated rows down from 60{,}261 to 3{,}259 and actual latency from 16.6 ms to 0.46 ms, roughly 36 times faster and well inside the 200 ms P95 target. The three anti-join formulations produced identical results and near-identical plans, confirming that the optimizer, not the syntax, decides performance. On concurrency, the lost update turned out to be a read-modify-write problem that \texttt{FOR UPDATE} solved; the three error codes (1452, 1062, 3819) showed the schema constraints working on their own. These results, together with the holdout check, address the measurable goals set in Section~\ref{sec:context}.

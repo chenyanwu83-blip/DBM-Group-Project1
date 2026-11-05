@@ -1,4 +1,4 @@
--- Completed Trips Unpaid for Over 24 Hours (anti-join + time filter)
+-- completed trips unpaid for over 24 hours
 SELECT t.trip_id,
        t.driver_id,
        t.fare,
