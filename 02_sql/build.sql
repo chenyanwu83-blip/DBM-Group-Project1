@@ -11,10 +11,9 @@
 --    Listing 17，仅清理了 PDF 排版空格，语义与官方完全一致），
 --    永不修改；扩展表一律追加到第 3 节扩展区。
 --
--- ⚠️ 版本：schema v1.0-rc（C3 · 2026-10-25）——第 3 节扩展区落地
---    三表（service_tier / pickup_zone / trip_detail），待 B4 ER v1.0
---    冻结对账确认后转正；确认前扩展区结构可能随 B4 微调，底座区
---    不受影响。
+-- ⚠️ 版本：schema v1.0（2026-11-05 转正）——B4 ER v1.0.1 已冻结、B6
+--    对账闭环（01_docs/b6_er_ddl_reconciliation.md），v1.0-rc 转正；
+--    表结构较 rc 没有任何变化，只是注释和版本号更新。
 --
 -- ⚠️ 版本策略：不强制升级，以组内登记的最低版本为兼容基线
 --    （见 01_docs/env_record.md）。collation 用 utf8mb4_general_ci，
@@ -33,8 +32,11 @@ USE ride_hailing;
 -- ============================================================
 -- 1. 官方底座 DDL（Listing 17，原样保留，勿改）
 --    五实体：Passenger / Vehicle / Driver / Trip / Payment
---    关键约束：Driver.vehicle_id UNIQUE（司机绑一车 N:1）
---             Payment.trip_id   UNIQUE（行程↔支付 1:1）
+--    关键约束：Driver.vehicle_id NOT NULL UNIQUE——每名司机恰绑一车，
+--             UNIQUE 又保证每辆车至多一名司机（图上的 1:1 指最大配对，
+--             老师示意图标的 1:N 是业务方向，实际到不了）
+--             Payment.trip_id NOT NULL UNIQUE——每段行程至多一笔支付，
+--             无支付的行程允许存在（官方 Q2 反连接正靠这一点）
 -- ============================================================
 
 CREATE TABLE Passenger (
@@ -100,8 +102,9 @@ JOIN Trip t   ON t.driver_id = d.driver_id
 GROUP BY v.vehicle_id, v.plate;
 
 -- ============================================================
--- 3. 扩展区（C3 · schema v1.0-rc，2026-10-25；待 B4 ER v1.0 冻结对账确认）
---    形态依据：D-11（两项扩展都采）+ B4 数据字典草案 §7——扩展属性走
+-- 3. 扩展区（C3 · schema v1.0，2026-10-25 落地、11-05 转正）
+--    形态依据：D-11（两项扩展都采）+ B4 数据字典
+--    （01_docs/b4_data_dictionary.md，v1.0.1）——扩展属性走
 --    以 trip_id 关联的独立表，官方五表不增列（底座铁律）。
 --
 --    ER 基数 ↔ SQL 约束映射（C3 验收："外键/唯一约束与 B 的基数
@@ -110,9 +113,10 @@ GROUP BY v.vehicle_id, v.plate;
 --      PickupZone   1 ─ N Trip  ↔ trip_detail.zone_id         NOT NULL + FK
 --      Trip         1 ─ 1 TripDetail ↔ trip_detail.trip_id 即 PK 又是 FK
 --                                    （主键即外键 → 每 Trip 至多一行扩展）
---      官方五表内部基数不变：Vehicle 1─N Driver 由 Driver.vehicle_id
---      UNIQUE 实现到"至多一"；Trip 1─1 Payment 由 Payment.trip_id UNIQUE
---      实现（0..1，Q2 反连接需要无支付行存在，见 B2 记录 caveat 2）
+--      官方五表内部基数不变（图记 1:1 = 最大配对，能不能缺看 UNIQUE）：
+--      Vehicle 1:1 Driver，vehicle_id UNIQUE ⇒ 每车 0..1 名司机；
+--      Trip 1:1 Payment，trip_id UNIQUE ⇒ 每 Trip 0..1 笔支付（Q2 反连接
+--      需要无支付行存在，见 B2 记录 caveat 2）
 --
 --    生成器侧不变量（import_data.py / C4 保证，schema 不强制）：
 --      ① 每 Trip 恰一行 trip_detail（含取消行：档次/区位是请求属性，
