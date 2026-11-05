@@ -1,28 +1,118 @@
 % ============================================================
 % §5 Evaluation — D 主笔、C 供数据 · 页数预算 1.5 · 素材 A5/D5/C6
-% 数字关（11-02）检查项：结论句挂的数字与截图/日志逐一对账
+% 数字关（11-03）检查项：结论句挂的数字与截图/日志逐一对账
 % 实验数字统一由 D 本机产出（协作纪律 4），避免跨机性能差异
+% 状态：v1 成稿 2026-11-03（D）。【回填位】标 ___ 的毫秒数 = 你本机 EXPLAIN ANALYZE 实测
+% 实验脚本：02_sql/exp_index.sql（实验①②）+ exp_concurrency.sql（实验③+G5）
+% 截图命名：exp_index_before/after_1103、exp_joinvsub_1103、exp_conc_*_1103、exp_g5_*_1103
 % ============================================================
 \section{Evaluation}
 \label{sec:eval}
 
 \subsection{Workload Profile}
-% TODO(D): A5 负载画像——Top5 高频查询（Q1 对账/Q6 调度/Q3、Q7 报表/Q5 催收）与读写比
-TODO(D): 表。
+% 素材：A3 v1.1（Top5 = Q6/Q1/Q5/Q2/Q7）+ A6 读写分流；TODO(A): A5 定稿后校对一行
+The workload follows the read/write split argued in Section~\ref{sec:context}: transactional writes (dispatch and payment) demand strong consistency, while analytical reads tolerate weaker freshness. The five most frequent queries are Q6 (hourly dispatch monitoring), Q1 (daily reconciliation), Q5 (periodic collections), Q2 (collections by driver) and Q7 (monthly reporting); all ten queries of Section~\ref{sec:sql} are read-only SELECTs, and writes concentrate on \texttt{Trip} and \texttt{Payment} at dispatch and settlement time.
 
 \subsection{Experiment 1: Index Before/After}
-% TODO(D): 选大表查询，EXPLAIN + 耗时成对截图；对照 G2 靶子（P95 < 200 ms）
-% 候选索引：Trip(status)、Trip(start_time)、扩展通过时 Trip/关联表(zone_id)
-TODO(D): 结果表 + 结论。
+% 载体与判读依据：02_sql/exp_index.sql §1（C 预验值注释）；G2 靶子 P95<200ms
+The target query counts completed trips since 2026-10 (\texttt{status} equality + \texttt{start\_time} range). Before the index, the plan is a full table scan (\texttt{type=ALL}, key NULL, rows $\approx$60{,}261); a composite index \texttt{(status, start\_time)} --- leftmost prefix: equality column first, range column second --- changes the plan to an index range scan whose leaves already contain everything the query needs (\texttt{Using index}, covering scan).
+
+\begin{table}[h]
+\centering
+\caption{Index before/after on the 60{,}000-row \texttt{Trip} table.}
+\label{tab:exp1}
+\small
+\begin{tabular}{@{}lllll@{}}
+\toprule
+ & \texttt{type} & \texttt{key} & est.\ rows & actual time \\
+\midrule
+before (no index)   & ALL   & ---                     & 60{,}261 & 16.6 ms \\
+after (composite)   & range & \texttt{idx\_trip\_status\_time} & 3{,}259  & 0.46 ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]\centering
+\begin{minipage}{0.49\textwidth}\centering
+\includegraphics[width=\textwidth]{exp_index_before_1104.png}
+\end{minipage}\hfill
+\begin{minipage}{0.49\textwidth}\centering
+\includegraphics[width=\textwidth]{exp_index_after_1104.png}
+\end{minipage}
+\caption{Experiment 1 before/after: \texttt{type} ALL $\to$ range, \texttt{rows} 60{,}261 $\to$ 3{,}259 (screenshots \texttt{exp\_index\_*\_1104.png}).}\label{fig:exp1}
+\end{figure}
+
+The same experiment exposes the classic non-sargable trap: wrapping the column in a function (\texttt{DATE(start\_time) = '2026-10-15'}) degrades access to a full sequential index scan, while rewriting it as a half-open interval restores \texttt{type=range}. This directly justifies the hour-bucket rewrite note of Q6. Against the latency target G2 (P95 $<$ 200 ms), the indexed plan stays two orders of magnitude below the bar.
 
 \subsection{Experiment 2: JOIN vs Subquery}
-% TODO(D): 同一业务问题两种写法的执行计划对比（如 Q2 NOT EXISTS vs LEFT JOIN ... IS NULL）
-TODO(D): 结果表 + 结论。
+The anti-join ``completed trips without payment'' (Q2/Q5) is expressed three ways: \texttt{NOT EXISTS}, \texttt{NOT IN}, and \texttt{LEFT JOIN ... IS NULL}. All three return the same 1{,}442 rows, and their plans coincide: a full scan of \texttt{Trip} probe-joined against the unique index of \texttt{Payment.trip\_id} (\texttt{eq\_ref}), with \texttt{Extra: Not exists; Using index} --- the optimizer rewrote both subquery forms into the same anti-join as the explicit LEFT JOIN variant.
+
+\begin{table}[h]
+\centering
+\caption{Three anti-join formulations: identical semantics, near-identical cost.}
+\label{tab:exp2}
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Formulation & result & plan signature & actual time \\
+\midrule
+\texttt{NOT EXISTS}          & 1{,}442 & \texttt{Not exists; Using index} & \_\_\_ ms \\
+\texttt{NOT IN}              & 1{,}442 & same as above & \_\_\_ ms \\
+\texttt{LEFT JOIN ... IS NULL} & 1{,}442 & same type, minor \texttt{filtered} diff & \_\_\_ ms \\
+\bottomrule
+\end{tabular}
+\end{table}
+% TODO(D): 三处 ___ 回填实测耗时；结论句同步 Q4 概念题空位
+
+One caveat travels with \texttt{NOT IN}: it is only safe when the subquery column is NOT NULL (\texttt{Payment.trip\_id} is), otherwise it silently returns nothing --- a reminder that plan evidence, not habit, should pick the formulation (conceptual Q4).
 
 \subsection{Experiment 3: Concurrent Transactions}
-% TODO(D): 两会话模拟并发支付，展示丢失更新与隔离级别效果；按 G3（50 TPS 设计余量）加压
-TODO(D): 结果表 + 结论。
+Two Workbench tabs simulate concurrent sessions on \texttt{trip\_detail} (row \texttt{trip\_id=92}, rating 3). \emph{Scenario 1 (lost update):} both transactions read 3 into session variables, A writes $3{+}1{=}4$ and commits, B then writes $3{-}1{=}2$ from its stale copy --- A's update vanishes although both statements reported success. \emph{Scenario 2 (pessimistic lock):} A's \texttt{SELECT ... FOR UPDATE} blocks B at the same statement; after A commits, B reads the committed value (current read) and both increments survive ($2 \to 3 \to 4$). \emph{Scenario 3 (isolation levels):} under the default REPEATABLE READ a transaction re-reads its snapshot (still 3) after another session commits a change, while READ COMMITTED sees the committed 5/3 flips --- snapshot reads versus current reads, exactly the behaviour that makes \texttt{FOR UPDATE} necessary in Scenario 2 (conceptual Q5).
+
+\begin{table}[h]
+\centering
+\caption{Concurrency scenarios and constraint interceptions (G5).}
+\label{tab:exp3}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Scenario & Observation & Guard demonstrated \\
+\midrule
+Lost update (read-modify-write) & final rating 2, one update lost & --- (the failure mode) \\
+\texttt{SELECT ... FOR UPDATE} & B waits, then $2\to3\to4$ & row lock (isolation layer) \\
+RR vs.\ RC re-read & RR keeps snapshot 3; RC sees 5/3 & isolation-level semantics \\
+FK to missing trip        & \texttt{ERROR 1452} & referential integrity \\
+Duplicate \texttt{trip\_id} payment & \texttt{ERROR 1062} & 1:1 via UNIQUE \\
+Rating out of 1--5 range  & \texttt{ERROR 3819} & CHECK constraint \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The last three rows double as evidence for goal G5: the declared constraints themselves intercept illegal writes at the schema layer, independent of any application logic.
+
+\subsection{Distribution Check against the RideAustin Holdout}
+% 素材：01_docs/d5_holdout_comparison.md（D-12 口径；生成段数字 = Q6/Q10 实测 + 星级补充查询）
+Generator parameters were calibrated on the 80\% training split of RideAustin and checked against the held-out 20\% split (decision D-12).
+
+\begin{table}[h]
+\centering
+\caption{Generated sample (60{,}000 trips) vs.\ RideAustin holdout.}
+\label{tab:holdout}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Dimension & RideAustin & Generated \\
+\midrule
+Tier mix (R/S/P/L) & 95.0 / 3.7 / 0.9 / 0.3\,\% & 95.1 / 3.7 / 0.9 / 0.3\,\% \\
+Mean fare (completed) & \$13.99 & \$14.00 \\
+Rating coverage & $\approx$90.7\,\% & 89.9\,\% \\
+Evening peak 17--20h share & $\approx$20.5\,\% & 22.4\,\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Deviations stay within about two percentage points on every comparable dimension; the check validates \emph{distribution consistency}, not the external validity of business conclusions. Status mix, payment methods and the unpaid rate follow course-defined rules and have no counterpart in the source data, so they are excluded by design.
 
 \subsection{Results Summary and Goal Recheck}
-% TODO(D): 统一结果表样收尾；每条结论必须挂实验数字，§6 与 §1 目标闭环
-TODO(D): 段落。
+(1) The composite index cut estimated rows from 60{,}261 to 3{,}259 and actual latency from 16.6 ms to 0.46 ms ($\approx$36$\times$) --- far inside the 200 ms P95 target G2. (2) Three anti-join formulations agree in result (1{,}442 rows) and plan, so query choice is governed by semantics and EXPLAIN evidence rather than folklore. (3) Concurrency behaviour decomposes cleanly: the lost update is a read-modify-write artefact, \texttt{FOR UPDATE} eliminates it, and schema-level constraints (1452/1062/3819) intercept illegal writes without application help (G5). Together with the holdout check these results close the loop with the measurable goals of Section~\ref{sec:context}.
+% TODO(D): 摘要段两处 ___ 与实验①一致后删此行
