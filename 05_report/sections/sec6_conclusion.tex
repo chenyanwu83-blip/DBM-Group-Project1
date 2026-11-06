@@ -1,19 +1,37 @@
 % ============================================================
 % §6 Conclusion and Limitations — A+E 合写 · 页数预算 0.5–1.0
 % rubric：Evaluation 结论有据 3 分——与 §1 目标逐条闭环
+% v0.1 2026-11-06 E 依 §1 目标表与 §5 实测数字起草；待 A 复核合写后定稿
+%   （数字均引自 sec1 tab:goals 与 sec5：16.6→0.46ms / 82–90ms / 1,442 / 1452·1062·3819）
 % ============================================================
 \section{Conclusion and Limitations}
 \label{sec:conclusion}
 
 \subsection{Goal Recheck}
-% TODO(A/E): 对照 §1 的 G1–G5 逐条回收：达成/未达成 + 挂实验编号
-TODO(A+E): 段落。
+Table~\ref{tab:goalcheck} closes the five quantified goals of Section~\ref{sec:context} one by one; every measurement cited comes from the experiments of Section~\ref{sec:eval}, not from the design targets themselves.
+
+\begin{table}[ht]
+\centering\small
+\caption{Goal recheck against the experiments of Section~\ref{sec:eval}}
+\label{tab:goalcheck}
+\begin{tabular}{@{}lp{5.4cm}p{5.2cm}@{}}
+\toprule
+\# & Outcome & Evidence \\
+\midrule
+G1 & delivered: 60{,}000 trips $\ge$ 50{,}000 & import row-count self-checks; clean re-run on a second machine all green \\
+G2 & met with margin: 0.46\,ms after indexing vs 16.6\,ms before, two orders of magnitude below the 200\,ms bar & Experiment~1, single-run EXPLAIN ANALYZE magnitude (reported honestly, not a measured P95) \\
+G3 & met by design: $\approx$36--72$\times$ write headroom over the 0.69--1.4 TPS peak model & declared design-margin claim, not an experiment acceptance item \\
+G4 & met: 1{,}442 completed-without-payment trips isolated; three anti-join forms identical at 82--90\,ms, inside the 500\,ms full-run budget & Q2/Q5 anti-join on the full table, Experiment~2 \\
+G5 & met: illegal writes rejected by the database itself & FK error 1452, UNIQUE 1062, CHECK 3819 demonstrated in Experiment~3 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \subsection{Limitations}
-% TODO(A/E): 已知局限——①仿真数据：跨组对比结论是生成规则回显，不做因果声称（D-10 撰写提醒）
-%            ②D-05：匹配期取消不落库，"下单量/应答率"不可分析 ③单机环境性能数字不可外推 ④样本规模
-TODO(A+E): 段落。
+Four boundaries should be read alongside these results. First, the dataset is synthetic: the distributional agreement with the RideAustin holdout (Section~\ref{sec:eval}) reflects the generator's calibration rules rather than real-world fit, so we report similarity and make no causal claims; the 15-zone pickup distribution in particular is a declared course setting without a calibration source. Second, by decision D-05 a trip enters the database only when dispatch succeeds, so unmatched requests are structurally invisible: order volume, dispatch success rate and matching latency cannot be analysed in this schema. Third, all performance figures are single-run magnitudes on one laptop-scale MySQL instance at 60{,}000 rows; they are order-of-magnitude evidence, not measured percentiles, and do not extrapolate to production scale or hardware. Fourth, the read-replica tier of the consistency design (Section~\ref{sec:context}) is a declared stance, not a deployed component.
 
 \subsection{Future Work}
-% TODO(A/E): 分区表 / 读写分离 / NoSQL 对比（方案给定方向）
-TODO(A+E): 段落。
+Three extensions follow naturally. Partitioning \texttt{Trip} by \texttt{start\_time} would turn the 180-day retention window into a drop-partition archival job instead of row-by-row deletes, and pairs well with the composite index of Experiment~1. Deploying the declared read replica would route the wide aggregate reads (reconciliation reports, monthly revenue, the dispatch dashboard) away from the write-heavy primary. Finally, a pre-insert matching-event table (request, driver offer, dispatch outcome) would close the D-05 scope gap and bring dispatch analytics within reach of the same five-entity core; re-modelling that event stream against a document store (NoSQL comparison) would be the natural next experiment.
+
+% TODO(A): 复核上表与两段——G1–G5 措辞须与 §1 tab:goals 同口径；§6.2 局限①③口径已对齐 D-10 撰写提醒
+

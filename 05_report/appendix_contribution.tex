@@ -1,24 +1,29 @@
 % ============================================================
-% 附录 A 贡献表 — E 制表、全员确认（11-03 定稿）
+% 附录 A 贡献表 — E 制表、全员确认（11-03 定稿；实际 11-06 补制）
 % 内容依据：01_docs 各任务交付记录；工作量% 五人合计 100%
+% v0.1 2026-11-06 E 依仓库提交记录与 01_docs 交付档案起草；
+%   工作量% 为 E 草案（按交付体量），待 11-08 全员逐一确认后冻结
 % ============================================================
 \section{Contribution Statement}
 \label{app:contribution}
 
-% TODO(胡中远): 11-03 前按仓库提交记录与任务表填写，全员逐一确认后冻结
 \begin{table}[ht]
-\centering
-\begin{tabular}{llll}
+\centering\small
+\begin{tabular}{lp{1.2cm}p{7.6cm}c}
 \toprule
 Member (SID) & Role & Main Contributions & Load \\
 \midrule
-CHEN Yinan (3162550)  & A & TODO & TODO\% \\
-ZHANG Yijie (3162641) & B & TODO & TODO\% \\
-CHEN Yanwu (3162744)  & C & TODO & TODO\% \\
-LING Tong (3162677)   & D & TODO & TODO\% \\
-HU Zhongyuan (3162304)& E & TODO & TODO\% \\
+CHEN Yinan (3162550)  & A & Business modelling: process flow, stakeholder needs, quantified goals G1--G5 and constraints; dataset selection and RideAustin calibration profile; billing and cancellation rules (D-05/D-06); workload profile and consistency trade-offs; author of Section~\ref{sec:context} & 15\% \\
+\addlinespace
+ZHANG Yijie (3162641) & B & ER model v1.0.1 and vector diagram; data dictionary (8 tables, 26 columns); extension proposal D-11; normalization review; ER--DDL reconciliation and signed handoff; author of Section~\ref{sec:er} with course-notation figure; Q1/Q2 reviewer & 20\% \\
+\addlinespace
+CHEN Yanwu (3162744)  & C & \texttt{build.sql} (official base + extension zone + self-checks); \texttt{import\_data.py} with fixed seed and RideAustin calibration (60{,}000 trips); clean re-run evidence on a second machine (C8); schema v1.0; engineering disciplines D-07/D-08; author of Section~\ref{sec:impl} and Appendix~B & 20\% \\
+\addlinespace
+LING Tong (3162677)   & D & Query catalogue q01--q10 with interpretations; eight concept answer cards; three experiments (index, JOIN vs subquery, concurrency) with archived screenshots; holdout comparison table; author of Sections~\ref{sec:sql}--\ref{sec:eval} & 25\% \\
+\addlinespace
+HU Zhongyuan (3162304)& E & Project management: timeline, milestones and follow-ups; decision registry D-05--D-12; meeting minutes (kickoff, M1, M3); four quality gates (ER / SQL / numbers / format); cover, contribution table and Section~\ref{sec:conclusion} co-author; integration and final compilation & 20\% \\
 \bottomrule
 \end{tabular}
-\caption{Team contributions}
+\caption{Team contributions (percentages pending group confirmation)}
 \label{tab:contribution}
 \end{table}
