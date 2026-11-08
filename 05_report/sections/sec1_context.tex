@@ -1,9 +1,10 @@
 % ============================================================
-% §1 Business Context and Goals — A 主笔、E 润色 · 页数预算 1.5
-% 素材：A1 业务流程 v1.3.2 / A2 利益相关者 / A3 目标与约束 v1.1 / A4 数据集选型 v1.2.1 / A5 负载画像 v1.0 / A6 一致性权衡 v1.0（六合一）
-% 对应 rubric：Problem framing & significance 4 分 + Methodology 3 分（目标必须带具体数字）
-% v1.0 2026-11-02（A7 首稿，超期 1 天补交）：四小节全部成文
-%   2026-11-08：business_flow.pdf 已入 figures/，图块解封（E）
+% §1 Business Context and Goals — A 主笔、E 统稿 · 页数预算 1.5
+% 素材：A1–A6；业务规则与基数对齐 D-05/D-06、B6 与 build.sql。
+% v1.0 2026-11-02（A7 首稿）：四小节全部成文
+% v1.1 2026-11-07：DeepL 中译英后校订——UNIQUE 实际基数、P95 验证边界、晚高峰占比、课程设定范围
+% v1.2 2026-11-07：DeepL 翻译后校订——补齐八实体、区分行程到达率与 TPS、删除未经验证的余量倍数
+% 2026-11-08（E）：business_flow.pdf 已入 figures/，图块解封
 % ============================================================
 \section{Business Context and Goals}
 \label{sec:context}
@@ -11,9 +12,11 @@
 \subsection{Background and Business Process}
 \label{subsec:background}
 
-We model the order-to-fulfilment chain of a ride-hailing platform: a passenger requests a ride, the platform dispatches it to a driver, the trip is performed and paid for, and optionally rated. Five official entities carry this chain---\texttt{Passenger}, \texttt{Driver}, \texttt{Vehicle}, \texttt{Trip} and \texttt{Payment}---joined by two non-default cardinalities: every driver is bound to exactly one vehicle (\texttt{Driver.vehicle\_id} UNIQUE, $N{:}1$), and every trip carries at most one payment (\texttt{Payment.trip\_id} UNIQUE, $1{:}1$).
+This project models a ride-hailing platform from dispatch to trip completion, payment and optional rating. The official schema contains five base entities, \texttt{Passenger}, \texttt{Driver}, \texttt{Vehicle}, \texttt{Trip} and \texttt{Payment}. The project retains these five tables and adds \texttt{trip\_detail}, \texttt{service\_tier} and \texttt{pickup\_zone}, giving eight entities in total. The foreign key, \texttt{NOT NULL} and \texttt{UNIQUE} constraints on \texttt{Driver.vehicle\_id} assign each driver one vehicle and each vehicle at most one driver. Similarly, \texttt{Payment.trip\_id} is a unique foreign key, so each trip can have at most one payment.
 
-One scoping decision shapes all downstream analysis (decision D-05): request--driver matching happens in the application layer, and a \texttt{Trip} row is inserted only when dispatch succeeds (\texttt{driver\_id} is \texttt{NOT NULL} in the official DDL). The database therefore never observes unmatched requests, and order-volume or dispatch-latency analytics are out of scope; we acknowledge this in Section~\ref{sec:conclusion}. Once inserted, a trip moves \texttt{accepted} $\rightarrow$ \texttt{en\_route} $\rightarrow$ \texttt{completed}, or is cancelled with two billed outcomes: cancelling within the grace period is free, while late cancellation is charged a flat \$1.50 fee and still produces exactly one \texttt{Payment} row---any charge, including a cancellation fee, must be a durable transactional record (decision D-06; first-party cancellation policy~\cite{ubercancelfee}, transactional-record practice~\cite{uberengmysql}).
+\texttt{trip\_detail} links each trip to its service tier and pickup zone and stores an optional rating. Its primary key, \texttt{trip\_id}, also serves as a foreign key to \texttt{Trip}. Two further foreign keys reference \texttt{service\_tier} and \texttt{pickup\_zone}. The generator creates one detail record per trip, including cancelled trips. The primary key and foreign key constrain each trip to at most one detail record.
+
+Under decision D-05, request matching takes place in the application layer. A \texttt{Trip} row is inserted only after successful dispatch, with \texttt{start\_time} recording that time. Unmatched requests are therefore unavailable for analysing total ride demand or matching latency (Section~\ref{sec:conclusion}). Trip status progresses through \texttt{accepted}, \texttt{en\_route} and \texttt{completed}. Early termination after boarding is classified as \texttt{completed}. Under D-06, cancellation before boarding is free within the grace period. Late cancellation or a passenger no-show incurs a \$1.50 fee, subject to a waiver for excessive pickup delays. Each charge, including a cancellation fee, is recorded in \texttt{Payment}~\cite{ubercancelfee,uberengmysql}.
 
 % 图块 2026-11-08 由 E 解封：business_flow.pdf 已导出至 05_report/figures/（导出 A、入工程 E）
 \begin{figure}[ht]
@@ -26,30 +29,30 @@ One scoping decision shapes all downstream analysis (decision D-05): request--dr
 \subsection{Stakeholders and Their Data Needs}
 \label{subsec:stakeholders}
 
-Table~\ref{tab:stakeholders} summarises the data needs of the five stakeholder parties (two each). Two of these needs harden into structural constraints: per-trip financial reconciliation (Finance, Passengers) forces \texttt{Trip}:\texttt{Payment} $= 1{:}1$, and driver--vehicle auditability (Drivers, Operations) forces \texttt{Driver}:\texttt{Vehicle} $= N{:}1$. Section~\ref{sec:er} realises both with UNIQUE keys rather than application-level checks, and the customer-service requirement ``locate a passenger's full trip chain within 30 seconds'' is the business origin of the latency goal G2 below---targets are derived, not asserted.
+Table~\ref{tab:stakeholders} lists two requirements for each stakeholder group. Trip reconciliation and vehicle assignment motivate the foreign key and uniqueness constraints discussed in Section~\ref{sec:er}. The customer-service requirement to retrieve a complete trip record within 30 seconds provides the business rationale for query-latency goal G2.
 
 \begin{table}[ht]
 \centering\small
-\caption{Stakeholders and their data needs (A2, two per party)}
+\caption{Stakeholders, data requirements and supporting tables}
 \label{tab:stakeholders}
 \begin{tabular}{@{}p{2.6cm}p{4.6cm}p{6.2cm}@{}}
 \toprule
-Party & Data need & Backing tables / keys \\
+Stakeholder & Data requirement & Supporting tables and keys \\
 \midrule
-Passengers & own trip and fare history & \texttt{Trip.psg\_id} $\bowtie$ \texttt{Payment.trip\_id} \\
-            & fare-vs-charged reconciliation & \texttt{Trip.fare} vs \texttt{Payment.amount} \\
+Passengers & Trip and fare history & \texttt{Trip.psg\_id}; \texttt{Payment.trip\_id} \\
+           & Fare and payment reconciliation & \texttt{Trip.fare}, \texttt{Payment.amount} \\
 \addlinespace
-Drivers & lifetime trips and total income & \texttt{Trip.driver\_id}, \texttt{SUM(fare)} \\
-        & unique, auditable vehicle binding & \texttt{Driver.vehicle\_id} (UNIQUE) $\rightarrow$ \texttt{Vehicle} \\
+Drivers & Cumulative trips and earnings & \texttt{Trip.driver\_id}, \texttt{SUM(fare)} \\
+        & Unique, verifiable vehicle assignment & \texttt{Driver.vehicle\_id} (FK, UNIQUE) \\
 \addlinespace
-Operations & peak-hour volume and cancellation rate & \texttt{Trip.start\_time}, \texttt{Trip.status} \\
-           & driver--vehicle assignment audit & \texttt{Driver} $\bowtie$ \texttt{Vehicle} ($N{:}1$) \\
+Operations & Peak trip volume and cancellation rate & \texttt{Trip.start\_time}, \texttt{Trip.status} \\
+           & Driver and vehicle assignment audit & \texttt{Driver} joined to \texttt{Vehicle} \\
 \addlinespace
-Finance & per-trip reconciliation, zero orphan payments & \texttt{Payment.trip\_id} (UNIQUE); anti-join of \texttt{completed} trips without payment \\
-        & daily/monthly revenue by payment method & \texttt{SUM(amount)} grouped by date / \texttt{method} \\
+Finance & Trip reconciliation and zero orphan payments & \texttt{Payment.trip\_id} (FK, UNIQUE); anti-join for unpaid completed trips \\
+        & Daily/monthly payment totals by method & \texttt{SUM(Payment.amount)}, \texttt{Trip.start\_time}, \texttt{Payment.method} \\
 \addlinespace
-Customer service & locate a full trip chain within 30\,s & five-table join \texttt{Passenger}--\texttt{Trip}--\texttt{Driver}--\texttt{Vehicle}--\texttt{Payment} \\
-        & disputed-fare cross-check & \texttt{fare} vs \texttt{amount} vs \texttt{method} \\
+Customer service & Retrieve complete trip records within 30\,s & Join \texttt{Passenger}, \texttt{Trip}, \texttt{Driver}, \texttt{Vehicle} and \texttt{Payment} \\
+                 & Verify disputed fares & \texttt{Trip.fare}, \texttt{Payment.amount}, \texttt{Payment.method} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -57,30 +60,32 @@ Customer service & locate a full trip chain within 30\,s & five-table join \text
 \subsection{Quantified Goals, Constraints and Trade-offs}
 \label{subsec:goals}
 
-Table~\ref{tab:goals} states the design goals with concrete numbers (A3 v1.1); all figures are verifiable against the experiments of Section~\ref{sec:eval}. The supporting constraints are: 180-day online retention with archival (C1), which caps hot-table size and motivates a parsimonious index set; relationship cardinalities enforced by UNIQUE keys (C2); non-negative payment amounts via CHECK (C3); group-wide compatibility at the lowest registered MySQL version, 8.0.45 (C5); and full rebuild from repository scripts within 30 minutes on any member's machine (C6, fixed seed).
+Table~\ref{tab:goals} distinguishes project design targets from the available verification evidence. The 200\,ms latency target, provisional 50 TPS throughput target and 180-day retention period are project requirements. Constraints include 180-day online retention with archiving (C1), relationship cardinalities enforced through UNIQUE constraints (C2), non-negative payment amounts enforced through CHECK (C3), compatibility with the group's lowest MySQL version, 8.0.45 (C5), and rebuilding within 30 minutes using repository scripts and a fixed random seed (C6).
 
 \begin{table}[ht]
 \centering\small
-\caption{Quantified design goals (A3 v1.1; single-machine MySQL at sample scale)}
+\caption{Quantified design goals and verification methods at sample scale}
 \label{tab:goals}
 \begin{tabular}{@{}lp{4.9cm}p{5.6cm}@{}}
 \toprule
-\# & Goal (number) & Verification \\
+\# & Design goal & Verification method \\
 \midrule
-G1 & sample scale $\ge$ 50{,}000 trips & row-count self-checks after import (delivered: 60{,}000) \\
-G2 & Top-5 query latency $P95 < 200$\,ms; Top-5 $=$ Q6, Q1, Q5, Q2, Q7 (A5) & Experiment~1 index before/after, taken as a single-run EXPLAIN ANALYZE magnitude on the Q5 predicate---reported honestly, not as a measured P95 \\
-G3 & write headroom $\approx$ 50 TPS & design-margin claim (peak model 0.69--1.4 TPS at 50k trips/day, $\approx$36--72$\times$ headroom); not an experiment acceptance item \\
-G4 & reconciliation completeness: zero missed \texttt{completed}-without-payment trips, full-table run $< 500$\,ms & Q2 anti-join verified on the full table \\
-G5 & referential integrity: zero orphans; violations rejected by the DB, not the application & demonstrated rejections: FK error 1452, UNIQUE 1062, CHECK 3819 \\
+G1 & At least 50{,}000 trips & Row-count checks after import (delivered: 60{,}000) \\
+G2 & Top-5 query latency $P95 < 200$\,ms (Q6, Q1, Q5, Q2, Q7) & Experiment~1 compares single-run EXPLAIN ANALYZE results before/after indexing on representative \texttt{status} and \texttt{start\_time} predicates. Top-5 P95 remains unmeasured. \\
+G3 & Provisional write-throughput target of approximately 50 TPS & Requires a defined transaction workload and load testing. Experiment~3 demonstrates concurrency behaviour, without measuring throughput. \\
+G4 & Zero missed \texttt{completed} trips without payment, full-table execution $< 500$\,ms & Experiment~2 compares full-table anti-join results and execution times. Zero missed trips requires independent verification of expected trip IDs. \\
+G5 & Referential integrity with zero orphan rows, violations rejected by the database & Experiment~3 demonstrates FK error 1452, UNIQUE error 1062 and CHECK error 3819. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Consistency trade-off.} Consistency is tiered by access path rather than chosen globally (A6). The dispatch/payment \emph{write path} is strongly consistent: money and contractual obligations behave like bank transfers, so invalid writes must be rejected by the database itself---transactions plus FK/UNIQUE/CHECK constraints, ``reject rather than silently accept''---and the 1:1 UNIQUE key on \texttt{Payment.trip\_id} is itself the consistency promise that makes anti-join reconciliation (G4) semantically sound. Aggregate \emph{reads} (reconciliation reports, monthly GMV, the 5-minute dispatch dashboard) may be weakly consistent: they consume trends and summaries, where minute-level staleness does not change decisions. Our workload profile justifies the split: by statement count the load is write-dominated ($\approx$99:1), yet by rows scanned it is read-dominated ($>$95\%), so routing wide aggregations to a read replica or cache leaves the primary for single-row writes and keeps its index maintenance affordable. Point lookups stay strongly consistent: customer-service lookups must see the latest trip status. In this course project we run a single instance, so the replica tier is a declared design stance rather than a deployed component (Section~\ref{sec:conclusion}).
+\textbf{Workload assumption for G3.} Assuming 50{,}000 trips per day, with 20\% occurring within two to four hours, the estimated arrival rate is 0.69--1.39 trips per second. Converting this rate to database TPS requires defining the transactions and their boundaries for each trip. The 50 TPS target remains unvalidated.
+
+\textbf{Consistency trade-off.} Dispatch and payment writes require strong consistency, while customer-service lookups require the latest trip status. Transactions and FK, UNIQUE and CHECK constraints protect data integrity. Aggregate reads, including reconciliation reports, monthly revenue summaries and the five-minute dispatch dashboard, can tolerate minute-level staleness. The A5 workload model estimates that writes account for approximately 99\% of statements, while aggregate reads account for over 95\% of scanned rows. These estimates motivate routing aggregate queries to a read replica or cache. The project runs on a single MySQL instance, so replication remains a design proposal (Section~\ref{sec:conclusion}).
 
 \subsection{Dataset Selection Rationale}
 \label{subsec:dataset}
 
-The dataset is synthetic: \texttt{import\_data.py} generates it with a fixed seed, so every member rebuilds identical data from the same repository scripts (constraints C6 and D-08). Its distributional parameters are calibrated against RideAustin~\cite{rideaustin-data,zuniga2020rideaustin}---a real, open, CC0-licensed ride-hailing corpus of $\approx$1.49M trips (Austin, 2016--2017)---covering the four-tier vehicle mix (REGULAR 95.1\%, SUV 3.7\%, PREMIUM 0.9\%, LUXURY 0.3\%), per-trip ratings ($\approx$90\% coverage on completed trips), four-tier fare rates, and the $\approx$20\% evening-peak share (17:00--20:00, realised as 20.5\% in the sample).
+\texttt{import\_data.py} generates 60{,}000 trips using a fixed random seed, allowing all members to rebuild the same dataset (C6, D-08). RideAustin~\cite{rideaustin-data,zuniga2020rideaustin}, a CC0-licensed dataset of approximately 1.49 million trips in Austin during 2016--2017, provides calibration data for service tiers, fares, rating coverage and the evening peak (17:00--20:00). An 80/20 calibration/holdout split supports the comparison in Section~\ref{sec:eval} (D-12). The generated REGULAR/SUV/PREMIUM/LUXURY shares are 95.1/3.7/0.9/0.3\%, with approximately 90\% rating coverage on completed trips. Section~\ref{sec:eval} reports an evening-peak share of 22.4\% in the generated data and approximately 20.5\% in the holdout.
 
-Real datasets were rejected on \emph{field fit}, a decisive criterion for a project graded on relationship modelling: NYC TLC high-volume FHV records~\cite{tlctripdata} carry no passenger identity, no payment method, and no driver--vehicle 1:1 binding---precisely the relationship columns this schema exists to enforce. To our knowledge, RideAustin is the only public dataset offering per-trip ratings, service tier, and both party IDs simultaneously, which is why it serves as the calibration source rather than the corpus itself. The sample scale is 60{,}000 trips over 365 days (satisfying G1 with margin), of which 1{,}442 \texttt{completed} trips deliberately lack payments so that the reconciliation anti-join is non-empty and verifiable (G4). Two honest caveats: the pickup-zone distribution (15 zones, top-3 $\approx$35\%) is a course setting without a calibration source and is declared as such; and an 80/20 calibration/holdout split of RideAustin underpins the distributional comparison reported in Section~\ref{sec:eval} (decision D-12).
+Field compatibility motivates using synthetic data. NYC TLC high-volume FHV records~\cite{tlctripdata} lack the passenger identifiers, payment methods and driver--vehicle assignments required by the schema. RideAustin provides ratings, service tiers and passenger/driver identifiers, making it suitable for calibration. The sample spans 365 days for query demonstrations, while 180-day online retention remains a design constraint. It intentionally includes 1{,}442 completed trips without payment for reconciliation tests. Cancellation rules, payment methods, the unpaid proportion and 15 pickup zones (top three approximately 35\%) are course assumptions. These dimensions are excluded from the RideAustin validation.
