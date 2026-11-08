@@ -2,7 +2,9 @@
 % §4 SQL Queries and Conceptual Q&A — D 主笔 · 页数预算 3.0 · 素材 D2/D3/D4
 % SQL 关检查项：报告中每条 SQL 与 02_sql/queries/ 脚本一字不差；截图可追溯
 % 状态：v1 成稿 2026-11-03（D）。截图源 03_data/screenshots/queries/ → 已复制 figures/
-% TODO(E) 压缩顺序：问答表述 → 截图两两并排（0.48\textwidth minipage）→ 查询解读合并
+% TODO(E) 压缩顺序：问答表述 → 截图两两并排 → 查询解读合并
+% 2026-11-08 E 执行"截图并排"：q01–q10 十图并为五行 0.485\textwidth minipage 对（原图无 \ref 引用，
+% caption 文字保留原句 + (a)(b) 前缀，\label 移除）。净省约 2 页；若 D 通读时否决可 git revert 本次提交
 % 数字已回填（Q4: within 8ms; Q6: 16.6→0.46ms）
 % ============================================================
 \section{SQL Queries and Conceptual Q\&A}
@@ -47,10 +49,7 @@ WHERE t.status = 'completed'
 ORDER BY t.start_time DESC;
 \end{lstlisting}
 
-\begin{figure}[h]\centering
-\includegraphics[width=0.72\textwidth]{q01_completed_payment_1029.png}
-\caption{Q1 result (first 1{,}000 rows shown; full set $\approx$49.2k completed--paid pairs).}\label{fig:q01}
-\end{figure}
+% [E 11-08] Q1 截图并入下方 Q2 块（并排压缩）
 
 \paragraph{Q2: Drivers with completed but unpaid trips.}
 The collections list. A \texttt{NOT EXISTS} anti-join keeps exactly those completed trips that have no Payment row; \texttt{DISTINCT} collapses them to the driver level. Note the scope: cancelled trips with the \$1.50 fee already carry exactly one Payment  and are therefore outside this list --- this query targets genuinely uncollected completed fares.
@@ -66,9 +65,16 @@ WHERE t.status = 'completed'
 ORDER BY d.driver_id;
 \end{lstlisting}
 
+% [E 11-08] 截图并排：Q1+Q2
 \begin{figure}[h]\centering
-\includegraphics[width=0.72\textwidth]{q02_unpaid_drivers_1029.png}
-\caption{Q2 result: all 150 drivers carry some unpaid completed trips (1{,}442 in total, by design $\approx$2.9\%).}\label{fig:q02}
+\begin{minipage}[t]{0.485\textwidth}\centering
+\includegraphics[width=\linewidth]{q01_completed_payment_1029.png}\\[2pt]
+{\small (a) Q1 result (first 1{,}000 rows shown; full set $\approx$49.2k completed--paid pairs).}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\textwidth}\centering
+\includegraphics[width=\linewidth]{q02_unpaid_drivers_1029.png}\\[2pt]
+{\small (b) Q2 result: all 150 drivers carry some unpaid completed trips (1{,}442 in total, by design $\approx$2.9\%).}
+\end{minipage}
 \end{figure}
 
 \paragraph{Q3: Total fare per vehicle.}
@@ -85,10 +91,7 @@ GROUP BY v.vehicle_id, v.plate
 ORDER BY total_fare DESC;
 \end{lstlisting}
 
-\begin{figure}[h]\centering
-\includegraphics[width=0.72\textwidth]{q03_vehicle_revenue_1029.png}
-\caption{Q3 result over the 150-vehicle fleet.}\label{fig:q03}
-\end{figure}
+% [E 11-08] Q3 截图并入下方 Q4 块（并排压缩）
 
 \paragraph{Q4: Driver daily income ranking.}
 Finds the ``driver of the day''. The derived table aggregates per driver and day first; the window function \texttt{RANK() OVER (ORDER BY day\_income DESC)} then ranks the aggregated rows in a single pass, avoiding a self-join formulation. The top driver-day earns \$292, well above a typical day, showing how earnings concentrate on peak days.
@@ -106,9 +109,16 @@ ORDER BY rnk
 LIMIT 10;
 \end{lstlisting}
 
+% [E 11-08] 截图并排：Q3+Q4
 \begin{figure}[h]\centering
-\includegraphics[width=0.72\textwidth]{q04_driver_daily_income_1029.png}
-\caption{Q4 result: top-10 driver-days.}\label{fig:q04}
+\begin{minipage}[t]{0.485\textwidth}\centering
+\includegraphics[width=\linewidth]{q03_vehicle_revenue_1029.png}\\[2pt]
+{\small (a) Q3 result over the 150-vehicle fleet.}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\textwidth}\centering
+\includegraphics[width=\linewidth]{q04_driver_daily_income_1029.png}\\[2pt]
+{\small (b) Q4 result: top-10 driver-days.}
+\end{minipage}
 \end{figure}
 
 \paragraph{Q5: Completed trips unpaid for over 24 hours.}
@@ -124,10 +134,7 @@ WHERE t.status = 'completed'
 ORDER BY hours_unpaid DESC;
 \end{lstlisting}
 
-\begin{figure}[h]\centering
-\includegraphics[width=0.72\textwidth]{q05_unpaid_over_24h_1029.png}
-\caption{Q5 result (first 1{,}000 of 1{,}442 rows shown).}\label{fig:q05}
-\end{figure}
+% [E 11-08] Q5 截图并入下方 Q6 块（并排压缩）
 
 \paragraph{Q6: Peak-hour order volume.}
 Groups all accepted trips by hour of day and keeps only hours reaching the 2{,}000-trip threshold --- a \texttt{HAVING} filter over groups that \texttt{WHERE} could never express. Demand concentrates in the evening block 17:00--20:00 (13{,}459 trips, 22.4\% of accepted volume) with a secondary morning shoulder, peaking at 3{,}915 trips in hour 18; dispatch should pre-position supply before 17:00.
@@ -141,9 +148,16 @@ HAVING COUNT(*) >= 2000
 ORDER BY trips DESC;
 \end{lstlisting}
 
+% [E 11-08] 截图并排：Q5+Q6
 \begin{figure}[h]\centering
-\includegraphics[width=0.72\textwidth]{q06_peak_hours_1029.png}
-\caption{Q6 result: 14 hours exceed the 2{,}000-trip threshold.}\label{fig:q06}
+\begin{minipage}[t]{0.485\textwidth}\centering
+\includegraphics[width=\linewidth]{q05_unpaid_over_24h_1029.png}\\[2pt]
+{\small (a) Q5 result (first 1{,}000 of 1{,}442 rows shown).}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\textwidth}\centering
+\includegraphics[width=\linewidth]{q06_peak_hours_1029.png}\\[2pt]
+{\small (b) Q6 result: 14 hours exceed the 2{,}000-trip threshold.}
+\end{minipage}
 \end{figure}
 
 \paragraph{Q7: Monthly revenue trend.}
@@ -159,10 +173,7 @@ GROUP BY DATE_FORMAT(t.start_time, '%Y-%m')
 ORDER BY ym;
 \end{lstlisting}
 
-\begin{figure}[h]\centering
-\includegraphics[width=0.72\textwidth]{q07_monthly_revenue_1029.png}
-\caption{Q7 result: twelve months of paid revenue.}\label{fig:q07}
-\end{figure}
+% [E 11-08] Q7 截图并入下方 Q8 块（并排压缩）
 
 \paragraph{Q8: Repeat passengers.}
 Keeps passengers active on at least two distinct days. Repeat usage is the norm rather than the exception --- the list exceeds the 1{,}000-row display cap, and the heaviest passenger rides 79 trips across 74 distinct days, roughly one trip every five days; retention metrics follow directly from this pattern.
@@ -178,9 +189,16 @@ HAVING COUNT(DISTINCT DATE(t.start_time)) >= 2
 ORDER BY active_days DESC, total_trips DESC;
 \end{lstlisting}
 
+% [E 11-08] 截图并排：Q7+Q8
 \begin{figure}[h]\centering
-\includegraphics[width=0.72\textwidth]{q08_repeat_passengers_1029.png}
-\caption{Q8 result (first 1{,}000 rows shown).}\label{fig:q08}
+\begin{minipage}[t]{0.485\textwidth}\centering
+\includegraphics[width=\linewidth]{q07_monthly_revenue_1029.png}\\[2pt]
+{\small (a) Q7 result: twelve months of paid revenue.}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\textwidth}\centering
+\includegraphics[width=\linewidth]{q08_repeat_passengers_1029.png}\\[2pt]
+{\small (b) Q8 result (first 1{,}000 rows shown).}
+\end{minipage}
 \end{figure}
 
 \paragraph{Q9: Accepted trips per pickup zone.}
@@ -197,10 +215,7 @@ ORDER BY accepted_trips DESC
 LIMIT 15;
 \end{lstlisting}
 
-\begin{figure}[h]\centering
-\includegraphics[width=0.72\textwidth]{q09_hot_zones_1029.png}
-\caption{Q9 result: all 15 zones.}\label{fig:q09}
-\end{figure}
+% [E 11-08] Q9 截图并入下方 Q10 块（并排压缩）
 
 \paragraph{Q10: Service tier $\times$ rating.}
 The product-line comparison, restricted to completed trips . \texttt{COUNT(rating)} counts only non-NULL values, so it yields the rating coverage, while \texttt{AVG(rating)} ignores NULLs automatically --- the NULL semantics of Section~\ref{sec:er} in action. The tier mix matches calibration (95.1/3.7/0.9/0.3\%); average fare climbs from \$13.85 to \$41.62 ($\approx$3$\times$) across tiers while ratings stay flat around 4.85 with $\approx$90\% coverage --- premium products monetize without hurting satisfaction.
@@ -220,9 +235,16 @@ GROUP BY st.tier_id, st.name
 ORDER BY completed_trips DESC;
 \end{lstlisting}
 
+% [E 11-08] 截图并排：Q9+Q10
 \begin{figure}[h]\centering
-\includegraphics[width=0.72\textwidth]{q10_service_tier_rating_1029.png}
-\caption{Q10 result across the four tiers.}\label{fig:q10}
+\begin{minipage}[t]{0.485\textwidth}\centering
+\includegraphics[width=\linewidth]{q09_hot_zones_1029.png}\\[2pt]
+{\small (a) Q9 result: all 15 zones.}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.485\textwidth}\centering
+\includegraphics[width=\linewidth]{q10_service_tier_rating_1029.png}\\[2pt]
+{\small (b) Q10 result across the four tiers.}
+\end{minipage}
 \end{figure}
 
 \subsection{Conceptual Q\&A}

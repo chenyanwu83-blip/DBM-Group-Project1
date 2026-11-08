@@ -51,12 +51,13 @@
   {\large Group: \textbf{Royal Family}}\par
   \vspace{1cm}
   % 学号已按 README 角色分工表回填（顺序按角色 A–E，与附录 A 贡献表一致）
+  % 2026-11-08 E：\middot 改 $\cdot$——\middot 需 amsmath 且仅限数学模式，pdfLaTeX/XeTeX 均报 Undefined control sequence
   \begin{tabular}{ll}
-    \textbf{A \middot Business \& Requirements} & CHEN Yinan (3162550) \\
-    \textbf{B \middot ER Modelling}             & ZHANG Yijie (3162641) \\
-    \textbf{C \middot Implementation}           & CHEN Yanwu (3162744) \\
-    \textbf{D \middot Queries \& Experiments}   & LING Tong (3162677) \\
-    \textbf{E \middot PM \& Integration}        & HU Zhongyuan (3162304) \\
+    \textbf{A $\cdot$ Business \& Requirements} & CHEN Yinan (3162550) \\
+    \textbf{B $\cdot$ ER Modelling}             & ZHANG Yijie (3162641) \\
+    \textbf{C $\cdot$ Implementation}           & CHEN Yanwu (3162744) \\
+    \textbf{D $\cdot$ Queries \& Experiments}   & LING Tong (3162677) \\
+    \textbf{E $\cdot$ PM \& Integration}        & HU Zhongyuan (3162304) \\
   \end{tabular}\par
   \vfill
   {\large \today}\par
@@ -74,8 +75,8 @@
 \input{sections/sec6_conclusion} % §6 A+E 合写
 
 % ================= References =================
-% TODO(全员): 正文落笔时用 \cite{...} 替换 \nocite{*}（骨架期先全量展示引用库 v1）
-\nocite{*}
+% 2026-11-08 E: 正文已全部成文，撤 \nocite{*}——参考文献只列被引条目（当前 6/8）
+% 未被引 2 条：mysql80（宜由 §3 引）、nycterms（宜随 §1.4 TLC 处引）——通读时由 A/C 就近补 \cite 或确认删除
 \bibliographystyle{plain}
 \bibliography{references}
 

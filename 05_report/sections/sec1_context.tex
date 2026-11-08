@@ -3,7 +3,7 @@
 % 素材：A1 业务流程 v1.3.2 / A2 利益相关者 / A3 目标与约束 v1.1 / A4 数据集选型 v1.2.1 / A5 负载画像 v1.0 / A6 一致性权衡 v1.0（六合一）
 % 对应 rubric：Problem framing & significance 4 分 + Methodology 3 分（目标必须带具体数字）
 % v1.0 2026-11-02（A7 首稿，超期 1 天补交）：四小节全部成文
-%   待办：图块待 a1_business_flow.drawio 导出 PDF 至 05_report/figures/ 后 uncomment（导出 A、入工程 E）
+%   2026-11-08：business_flow.pdf 已入 figures/，图块解封（E）
 % ============================================================
 \section{Business Context and Goals}
 \label{sec:context}
@@ -15,13 +15,13 @@ We model the order-to-fulfilment chain of a ride-hailing platform: a passenger r
 
 One scoping decision shapes all downstream analysis (decision D-05): request--driver matching happens in the application layer, and a \texttt{Trip} row is inserted only when dispatch succeeds (\texttt{driver\_id} is \texttt{NOT NULL} in the official DDL). The database therefore never observes unmatched requests, and order-volume or dispatch-latency analytics are out of scope; we acknowledge this in Section~\ref{sec:conclusion}. Once inserted, a trip moves \texttt{accepted} $\rightarrow$ \texttt{en\_route} $\rightarrow$ \texttt{completed}, or is cancelled with two billed outcomes: cancelling within the grace period is free, while late cancellation is charged a flat \$1.50 fee and still produces exactly one \texttt{Payment} row---any charge, including a cancellation fee, must be a durable transactional record (decision D-06; first-party cancellation policy~\cite{ubercancelfee}, transactional-record practice~\cite{uberengmysql}).
 
-% TODO(A/E): 04_figures/a1_business_flow.drawio 导出矢量 PDF 至 05_report/figures/business_flow.pdf 后 uncomment：
-% \begin{figure}[ht]
-%   \centering
-%   \includegraphics[width=0.9\textwidth]{business_flow.pdf}
-%   \caption{Business process of order dispatch and fulfilment; the matching queue stays outside the database (D-05).}
-%   \label{fig:business-flow}
-% \end{figure}
+% 图块 2026-11-08 由 E 解封：business_flow.pdf 已导出至 05_report/figures/（导出 A、入工程 E）
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\textwidth]{business_flow.pdf}
+  \caption{Business process of order dispatch and fulfilment; the matching queue stays outside the database (D-05).}
+  \label{fig:business-flow}
+\end{figure}
 
 \subsection{Stakeholders and Their Data Needs}
 \label{subsec:stakeholders}
