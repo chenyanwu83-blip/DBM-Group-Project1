@@ -1,46 +1,17 @@
-% ============================================================
-% §4 SQL Queries and Conceptual Q&A — D 主笔 · 页数预算 3.0 · 素材 D2/D3/D4
-% SQL 关检查项：报告中每条 SQL 与 02_sql/queries/ 脚本一字不差；截图可追溯
-% 状态：v1 成稿 2026-11-03（D）。截图源 03_data/screenshots/queries/ → 已复制 figures/
-% TODO(E) 压缩顺序：问答表述 → 截图两两并排 → 查询解读合并
-% 2026-11-08 E 执行"截图并排"：q01–q10 十图并为五行 0.485\textwidth minipage 对（原图无 \ref 引用，
-% caption 文字保留原句 + (a)(b) 前缀，\label 移除）。净省约 2 页；若 D 通读时否决可 git revert 本次提交
-% 数字已回填（Q4: within 8ms; Q6: 16.6→0.46ms）
-% ============================================================
+% §4 SQL Queries and Conceptual Q&A — D 主笔
+% 2026-11-09 D 压缩版：问答~110词/题; 解读合并; 去总览表; caption精简
+% SQL 与 02_sql/queries/ 逐字一致; 截图与 figures/ 一一对应
 \section{SQL Queries and Conceptual Q\&A}
 \label{sec:sql}
 
 \subsection{Business Queries}
 
-Our workload is answered by ten verified queries: the three official baseline queries (Q1--Q3) plus seven advanced ones (Q4--Q10). All were executed on the 60{,}000-trip sample (Section~\ref{sec:impl}); each query below pairs the exact SQL with its result screenshot and a two--three sentence business interpretation. Table~\ref{tab:query-overview} summarizes the set.
+Ten queries answer the workload, all executed on the 60{,}000-trip sample. Each listing below is the exact SQL from \texttt{02\_sql/queries/}; screenshots are archived in the repository.
 
-\begin{table}[h]
-\centering
-\caption{Query overview: business question, tables, and SQL technique.}
-\label{tab:query-overview}
-\small
-\begin{tabular}{@{}clll@{}}
-\toprule
-\# & Business question & Tables & Technique \\
-\midrule
-Q1 & Completed trips with payments & Trip, Payment & INNER JOIN (1:1) \\
-Q2 & Drivers with unpaid completed trips & Driver, Trip, Payment & NOT EXISTS anti-join \\
-Q3 & Revenue per vehicle & Vehicle, Driver, Trip & 3-table JOIN + GROUP BY \\
-Q4 & Driver daily income ranking & Trip & Window function RANK() \\
-Q5 & Unpaid $>$24h completed trips & Trip, Payment & Anti-join + time filter \\
-Q6 & Peak-hour order volume & Trip & GROUP BY + HAVING \\
-Q7 & Monthly revenue trend & Trip, Payment & Monthly GROUP BY + SUM \\
-Q8 & Repeat passengers & Passenger, Trip & COUNT(DISTINCT) + HAVING \\
-Q9 & Accepted trips per pickup zone & Trip, trip\_detail, pickup\_zone & JOIN + ORDER BY \\
-Q10 & Service tier $\times$ rating & Trip, trip\_detail, service\_tier & Aggregates + NULL semantics \\
-\bottomrule
-\end{tabular}
-\end{table}
+\paragraph{Q1--Q2: Payment reconciliation and collections.}
+Q1 pairs every completed trip with its payment via the UNIQUE \texttt{trip\_id} join --- \texttt{fare} equals \texttt{amount} row by row. Card is the dominant payment method. Q2 flips the join into a \texttt{NOT EXISTS} anti-join to find drivers with uncollected fares: 150 drivers, 1{,}442 trips. Cancelled trips carrying the \$1.50 fee already have a Payment row, so they stay off the list.
 
-\paragraph{Q1: Completed trips with their payments.}
-The reconciliation view for daily operations. The join condition rests on the UNIQUE constraint of \texttt{Payment.trip\_id}, which implements the 1:1 Trip--Payment relationship; \texttt{fare} equals \texttt{amount} row by row, confirming the mapping on the full sample. Card dominates the observed payment mix, and the newest-first ordering supports review.
-
-\begin{lstlisting}[caption={Q1 --- completed trips with payment (1:1 join).}]
+\begin{lstlisting}[caption={Q1: completed trips with payment.}]
 SELECT t.trip_id, t.psg_id, t.driver_id, t.fare,
        p.pay_id, p.amount, p.method
 FROM Trip t
@@ -49,12 +20,7 @@ WHERE t.status = 'completed'
 ORDER BY t.start_time DESC;
 \end{lstlisting}
 
-% [E 11-08] Q1 截图并入下方 Q2 块（并排压缩）
-
-\paragraph{Q2: Drivers with completed but unpaid trips.}
-The collections list. A \texttt{NOT EXISTS} anti-join keeps exactly those completed trips that have no Payment row; \texttt{DISTINCT} collapses them to the driver level. Note the scope: cancelled trips with the \$1.50 fee already carry exactly one Payment  and are therefore outside this list --- this query targets genuinely uncollected completed fares.
-
-\begin{lstlisting}[caption={Q2 --- completed but unpaid drivers (NOT EXISTS).}]
+\begin{lstlisting}[caption={Q2: completed but unpaid drivers.}]
 SELECT DISTINCT d.driver_id, d.name
 FROM Driver d
      INNER JOIN Trip t ON t.driver_id = d.driver_id
@@ -65,22 +31,21 @@ WHERE t.status = 'completed'
 ORDER BY d.driver_id;
 \end{lstlisting}
 
-% [E 11-08] 截图并排：Q1+Q2
 \begin{figure}[h]\centering
 \begin{minipage}[t]{0.485\textwidth}\centering
 \includegraphics[width=\linewidth]{q01_completed_payment_1029.png}\\[2pt]
-{\small (a) Q1 result (first 1{,}000 rows shown; full set $\approx$49.2k completed--paid pairs).}
+{\small (a) Q1 (first 1{,}000 of $\approx$49.2k rows).}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\textwidth}\centering
 \includegraphics[width=\linewidth]{q02_unpaid_drivers_1029.png}\\[2pt]
-{\small (b) Q2 result: all 150 drivers carry some unpaid completed trips (1{,}442 in total, by design $\approx$2.9\%).}
+{\small (b) Q2: 150 drivers, 1{,}442 unpaid trips.}
 \end{minipage}
 \end{figure}
 
-\paragraph{Q3: Total fare per vehicle.}
-The asset-level accounting view across \texttt{Vehicle} $\to$ \texttt{Driver} $\to$ \texttt{Trip}. Revenue is well balanced --- head vehicles accumulate roughly 440--460 trips against a fleet average of 400 --- so no single asset dominates, which supports stable per-vehicle reporting.
+\paragraph{Q3--Q4: Revenue by vehicle and by driver-day.}
+Q3 aggregates across \texttt{Vehicle}$\to$\texttt{Driver}$\to$\texttt{Trip}; revenue is balanced (head vehicles 440--460 trips vs.\ fleet average 400). Q4 ranks driver-days with \texttt{RANK() OVER} on the aggregated daily income --- one pass, no self-join. The top earner makes \$292 in a single day.
 
-\begin{lstlisting}[caption={Q3 --- total fare per vehicle (3-table join).}]
+\begin{lstlisting}[caption={Q3: total fare per vehicle.}]
 SELECT v.plate,
        ROUND(SUM(t.fare), 2) AS total_fare,
        COUNT(*) AS trip_cnt
@@ -91,12 +56,7 @@ GROUP BY v.vehicle_id, v.plate
 ORDER BY total_fare DESC;
 \end{lstlisting}
 
-% [E 11-08] Q3 截图并入下方 Q4 块（并排压缩）
-
-\paragraph{Q4: Driver daily income ranking.}
-Finds the ``driver of the day''. The derived table aggregates per driver and day first; the window function \texttt{RANK() OVER (ORDER BY day\_income DESC)} then ranks the aggregated rows in a single pass, avoiding a self-join formulation. The top driver-day earns \$292, well above a typical day, showing how earnings concentrate on peak days.
-
-\begin{lstlisting}[caption={Q4 --- driver daily income ranking (window function).}]
+\begin{lstlisting}[caption={Q4: driver daily income ranking.}]
 SELECT driver_id, income_date, day_income,
        RANK() OVER (ORDER BY day_income DESC) AS rnk
 FROM (SELECT driver_id,
@@ -109,22 +69,21 @@ ORDER BY rnk
 LIMIT 10;
 \end{lstlisting}
 
-% [E 11-08] 截图并排：Q3+Q4
 \begin{figure}[h]\centering
 \begin{minipage}[t]{0.485\textwidth}\centering
 \includegraphics[width=\linewidth]{q03_vehicle_revenue_1029.png}\\[2pt]
-{\small (a) Q3 result over the 150-vehicle fleet.}
+{\small (a) Q3: 150-vehicle fleet.}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\textwidth}\centering
 \includegraphics[width=\linewidth]{q04_driver_daily_income_1029.png}\\[2pt]
-{\small (b) Q4 result: top-10 driver-days.}
+{\small (b) Q4: top-10 driver-days.}
 \end{minipage}
 \end{figure}
 
-\paragraph{Q5: Completed trips unpaid for over 24 hours.}
-The receivables exposure view. Because the simulated history ends before load time, every one of the 1{,}442 unpaid completed trips is already far beyond the threshold, so the filter currently passes all of them and the exposure equals the sum of their fares; in production the same threshold would isolate genuinely overdue receivables.
+\paragraph{Q5--Q6: Collections exposure and dispatch planning.}
+Q5 filters unpaid completed trips beyond 24 hours --- all 1{,}442 qualify because the simulated history ends before load time; the threshold would isolate overdue receivables in production. Q6 groups trips by hour and keeps hours above 2{,}000 trips with \texttt{HAVING}, something \texttt{WHERE} cannot do. The evening block 17:00--20:00 carries 22.4\% of volume, peaking at hour 18.
 
-\begin{lstlisting}[caption={Q5 --- unpaid $>$24h (anti-join + time filter).}]
+\begin{lstlisting}[caption={Q5: unpaid $>$24h.}]
 SELECT t.trip_id, t.driver_id, t.fare, t.start_time,
        TIMESTAMPDIFF(HOUR, t.start_time, NOW()) AS hours_unpaid
 FROM Trip t
@@ -134,12 +93,7 @@ WHERE t.status = 'completed'
 ORDER BY hours_unpaid DESC;
 \end{lstlisting}
 
-% [E 11-08] Q5 截图并入下方 Q6 块（并排压缩）
-
-\paragraph{Q6: Peak-hour order volume.}
-Groups all accepted trips by hour of day and keeps only hours reaching the 2{,}000-trip threshold --- a \texttt{HAVING} filter over groups that \texttt{WHERE} could never express. Demand concentrates in the evening block 17:00--20:00 (13{,}459 trips, 22.4\% of accepted volume) with a secondary morning shoulder, peaking at 3{,}915 trips in hour 18; dispatch should pre-position supply before 17:00.
-
-\begin{lstlisting}[caption={Q6 --- peak-hour volume (GROUP BY + HAVING).}]
+\begin{lstlisting}[caption={Q6: peak-hour volume.}]
 SELECT HOUR(start_time) AS hr,
        COUNT(*) AS trips
 FROM Trip
@@ -148,22 +102,21 @@ HAVING COUNT(*) >= 2000
 ORDER BY trips DESC;
 \end{lstlisting}
 
-% [E 11-08] 截图并排：Q5+Q6
 \begin{figure}[h]\centering
 \begin{minipage}[t]{0.485\textwidth}\centering
 \includegraphics[width=\linewidth]{q05_unpaid_over_24h_1029.png}\\[2pt]
-{\small (a) Q5 result (first 1{,}000 of 1{,}442 rows shown).}
+{\small (a) Q5 (first 1{,}000 of 1{,}442).}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\textwidth}\centering
 \includegraphics[width=\linewidth]{q06_peak_hours_1029.png}\\[2pt]
-{\small (b) Q6 result: 14 hours exceed the 2{,}000-trip threshold.}
+{\small (b) Q6: 14 hours above threshold.}
 \end{minipage}
 \end{figure}
 
-\paragraph{Q7: Monthly revenue trend.}
-Joins payments back to trip start months for the GMV view. Paid revenue rises steadily from \$49.3k (2025-11) to \$54.8k (2026-10), about +11\% over twelve months with no seasonal dip, supporting the growth assumption stated in Section~\ref{sec:context}.
+\paragraph{Q7--Q8: Trends and retention.}
+Q7 joins payments to trip months: revenue climbs from \$49.3k to \$54.8k over twelve months, about +11\% with no dip. Q8 keeps passengers active on two or more distinct days --- the heaviest rides 79 trips across 74 days.
 
-\begin{lstlisting}[caption={Q7 --- monthly revenue trend.}]
+\begin{lstlisting}[caption={Q7: monthly revenue.}]
 SELECT DATE_FORMAT(t.start_time, '%Y-%m') AS ym,
        COUNT(*) AS paid_trips,
        ROUND(SUM(p.amount), 2) AS revenue
@@ -173,12 +126,7 @@ GROUP BY DATE_FORMAT(t.start_time, '%Y-%m')
 ORDER BY ym;
 \end{lstlisting}
 
-% [E 11-08] Q7 截图并入下方 Q8 块（并排压缩）
-
-\paragraph{Q8: Repeat passengers.}
-Keeps passengers active on at least two distinct days. Repeat usage is the norm rather than the exception --- the list exceeds the 1{,}000-row display cap, and the heaviest passenger rides 79 trips across 74 distinct days, roughly one trip every five days; retention metrics follow directly from this pattern.
-
-\begin{lstlisting}[caption={Q8 --- repeat passengers (COUNT DISTINCT).}]
+\begin{lstlisting}[caption={Q8: repeat passengers.}]
 SELECT p.psg_id, p.name,
        COUNT(*) AS total_trips,
        COUNT(DISTINCT DATE(t.start_time)) AS active_days
@@ -189,22 +137,21 @@ HAVING COUNT(DISTINCT DATE(t.start_time)) >= 2
 ORDER BY active_days DESC, total_trips DESC;
 \end{lstlisting}
 
-% [E 11-08] 截图并排：Q7+Q8
 \begin{figure}[h]\centering
 \begin{minipage}[t]{0.485\textwidth}\centering
 \includegraphics[width=\linewidth]{q07_monthly_revenue_1029.png}\\[2pt]
-{\small (a) Q7 result: twelve months of paid revenue.}
+{\small (a) Q7: twelve months.}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\textwidth}\centering
 \includegraphics[width=\linewidth]{q08_repeat_passengers_1029.png}\\[2pt]
-{\small (b) Q8 result (first 1{,}000 rows shown).}
+{\small (b) Q8 (first 1{,}000 rows).}
 \end{minipage}
 \end{figure}
 
-\paragraph{Q9: Accepted trips per pickup zone.}
-The spatial view enabled by the \texttt{trip\_detail} extension. The top three zones --- Downtown (16.9\%), West Campus (9.4\%) and South Congress (8.2\%) --- absorb 34.6\% of accepted trips, matching the calibrated spatial concentration of $\approx$35\%. This counts \emph{accepted} trips only: requests that never received a driver are outside the data and cannot be inferred (Section~\ref{sec:conclusion}).
+\paragraph{Q9--Q10: Spatial and product-line views from the extension tables.}
+Q9 joins through \texttt{trip\_detail} to \texttt{pickup\_zone}: the top three zones absorb 34.6\% of accepted trips (Downtown 16.9\%, West Campus 9.4\%, South Congress 8.2\%). This counts accepted trips only --- requests without a driver are outside the data. Q10 joins to \texttt{service\_tier} and uses \texttt{COUNT(rating)} for coverage (NULL-skipping) and \texttt{AVG(rating)} for the mean: fare climbs 3$\times$ across tiers while ratings stay flat at 4.85.
 
-\begin{lstlisting}[caption={Q9 --- accepted trips per zone .}]
+\begin{lstlisting}[caption={Q9: accepted trips per zone.}]
 SELECT z.zone_id, z.name,
        COUNT(*) AS accepted_trips
 FROM Trip t
@@ -215,12 +162,7 @@ ORDER BY accepted_trips DESC
 LIMIT 15;
 \end{lstlisting}
 
-% [E 11-08] Q9 截图并入下方 Q10 块（并排压缩）
-
-\paragraph{Q10: Service tier $\times$ rating.}
-The product-line comparison, restricted to completed trips . \texttt{COUNT(rating)} counts only non-NULL values, so it yields the rating coverage, while \texttt{AVG(rating)} ignores NULLs automatically --- the NULL semantics of Section~\ref{sec:er} in action. The tier mix matches calibration (95.1/3.7/0.9/0.3\%); average fare climbs from \$13.85 to \$41.62 ($\approx$3$\times$) across tiers while ratings stay flat around 4.85 with $\approx$90\% coverage --- premium products monetize without hurting satisfaction.
-
-\begin{lstlisting}[caption={Q10 --- service tier vs.\ rating (completed only).}]
+\begin{lstlisting}[caption={Q10: service tier vs.\ rating.}]
 SELECT st.name AS tier,
        COUNT(*) AS completed_trips,
        ROUND(AVG(t.fare), 2) AS avg_fare,
@@ -235,40 +177,39 @@ GROUP BY st.tier_id, st.name
 ORDER BY completed_trips DESC;
 \end{lstlisting}
 
-% [E 11-08] 截图并排：Q9+Q10
 \begin{figure}[h]\centering
 \begin{minipage}[t]{0.485\textwidth}\centering
 \includegraphics[width=\linewidth]{q09_hot_zones_1029.png}\\[2pt]
-{\small (a) Q9 result: all 15 zones.}
+{\small (a) Q9: 15 zones.}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.485\textwidth}\centering
 \includegraphics[width=\linewidth]{q10_service_tier_rating_1029.png}\\[2pt]
-{\small (b) Q10 result across the four tiers.}
+{\small (b) Q10: four tiers.}
 \end{minipage}
 \end{figure}
 
 \subsection{Conceptual Q\&A}
 
 \paragraph{Q1: Primary key vs.\ foreign key.}
-A primary key identifies each row of a table: it is declared NOT NULL and UNIQUE and works like the address of a row, for instance \texttt{Passenger.psg\_id}. A foreign key is a column in a child table whose values must exist in the referenced key of the parent table; \texttt{Trip.psg\_id} is the example in our schema. The two work as a pair. Referential integrity fails the moment an orphan row appears, so MySQL rejects an insert such as \texttt{Trip(psg\_id=99999)} when passenger 99999 does not exist (error 1452), and it refuses to delete a parent row that is still referenced unless the schema declares CASCADE or SET NULL. We relied on this behaviour throughout the design. Every Trip points to a real Passenger and a real Driver, and \texttt{Payment.trip\_id}, which is NOT NULL, UNIQUE and a foreign key at once, also guarantees that a payment attaches to one real trip only --- this is how the 1:1 Trip--Payment relationship is actually implemented.
+A primary key is NOT NULL and UNIQUE and acts as the address of a row (\texttt{Passenger.psg\_id}). A foreign key is a child-table column whose values must exist in the parent key (\texttt{Trip.psg\_id}). MySQL rejects \texttt{Trip(psg\_id=99999)} with error 1452 if the passenger does not exist, and blocks deleting a still-referenced parent under RESTRICT (or CASCADE / SET NULL if declared). In our schema \texttt{Payment.trip\_id} is NOT NULL, UNIQUE and a foreign key at once, so a payment always attaches to exactly one real trip --- the 1:1 implementation itself.
 
 \paragraph{Q2: 1NF, 2NF and 3NF.}
-Normalization removes redundancy level by level. First normal form asks that every cell hold one atomic value --- no lists such as ``morning peak, evening peak'' inside a single column. Second normal form removes partial dependencies: every non-key attribute must depend on the whole candidate key. This one comes for free in our design, because all five tables use single-column surrogate keys. Third normal form removes transitive dependencies, and this is where a concrete example helps. If we stored the plate directly in \texttt{Driver(driver\_id, name, vehicle\_id, plate)}, then plate would depend on vehicle\_id, which depends on the key --- a transitive chain. The chain brings three anomalies. Re-registering a vehicle would force updates to many driver rows, and missing one leaves the data inconsistent (update anomaly). Deleting the only driver of a vehicle would erase the plate as well (deletion anomaly). A vehicle with no driver yet could not be recorded at all (insertion anomaly). Splitting the table into \texttt{Driver} and \texttt{Vehicle} breaks the chain, which is exactly the structure we adopted.
+1NF: each cell holds one atomic value. 2NF: no non-key attribute depends on only part of a composite key --- ours use single-column surrogate keys, so 2NF holds by construction. 3NF: no transitive dependencies. If we stored the plate in \texttt{Driver(driver\_id, name, vehicle\_id, plate)}, plate would depend on vehicle\_id, which depends on the key. That chain causes update, deletion and insertion anomalies. Splitting into \texttt{Driver} and \texttt{Vehicle} breaks it, which is the structure we adopted.
 
 \paragraph{Q3: INNER, LEFT and RIGHT JOIN.}
-INNER JOIN keeps only the rows that match on both sides. LEFT JOIN keeps every row of the left table and fills the right-side columns with NULL where no match exists; RIGHT JOIN is the mirror image. The case where LEFT JOIN is genuinely needed is our per-driver activity report: ``list every driver with their completed-trip count, \emph{including} newly registered drivers who have completed zero trips''. An INNER JOIN quietly drops those zero-trip drivers, and the statistics would look better than reality. Two details make the LEFT JOIN version correct. The status filter belongs in the ON clause; placed in WHERE instead, it removes the NULL-extended rows and the join degenerates back into an INNER JOIN. And the count must be \texttt{COUNT(t.trip\_id)}, not \texttt{COUNT(*)}: for a driver without matches the former returns 0 while the latter counts the single NULL row as 1. We use this pattern for every per-driver report on the 60{,}000-trip table.
+INNER JOIN keeps only matching rows; LEFT JOIN keeps every left-table row, filling unmatched right columns with NULL. LEFT JOIN is mandatory when zero-trip drivers must appear in a per-driver report --- INNER JOIN would drop them silently. The status filter goes in the ON clause (in WHERE it degenerates the join back to INNER), and the count uses \texttt{COUNT(t.trip\_id)} instead of \texttt{COUNT(*)} so unmatched drivers read 0, not 1.
 
 \paragraph{Q4: Subquery vs.\ JOIN.}
-Take ``find the passengers who rode vehicle 3''. The JOIN formulation joins Passenger, Trip and Driver and removes duplicates with DISTINCT; the subquery formulation tests \texttt{psg\_id IN (SELECT ...)}. In principle the JOIN should win, because the optimizer can use the indexes on the join columns inside one execution plan, while older MySQL versions sometimes re-evaluated an IN subquery once per outer row. EXISTS is often the safest of the three, since it behaves as a semi-join and stops at the first match. In practice, though, MySQL 8 rewrites most IN and EXISTS forms into semi-joins, so the plans and the running times are often the same. One caveat: NOT IN is only safe when the subquery column is NOT NULL, which holds for \texttt{Payment.trip\_id}. Our Experiment~2 (Section~\ref{sec:eval}) shows exactly this: the three anti-join formulations return the same 1{,}442 rows with the same plan (\texttt{Extra: Not exists; Using index}), finishing within 8 ms of one another. Which formulation to pick is therefore a question for EXPLAIN, not for habit.
+The same question ``who rode vehicle 3'' can be written with a JOIN plus DISTINCT, with \texttt{psg\_id IN (SELECT ...)}, or with EXISTS. In principle the JOIN should win because the optimizer uses join-column indexes in one plan. In practice MySQL 8 rewrites most IN and EXISTS forms into semi-joins, so the plans come out identical. Our Experiment 2 confirms this: all three anti-join variants return 1{,}442 rows with the same plan, within 8 ms. NOT IN is unsafe if the subquery column can be NULL --- \texttt{Payment.trip\_id} is NOT NULL, so it works here.
 
 \paragraph{Q5: ACID and concurrent payments.}
-Atomicity: all writes in a transaction succeed together or leave no trace. Consistency: every committed state satisfies all declared constraints. Isolation: concurrent transactions never see each other's intermediate states. Durability: once committed, changes survive crash and restart. Now take a hypothetical wallet column with balance 100 and two concurrent \$50 payments. Both transactions read 100, both compute 50, and both write 50 back, so the final balance is 50 instead of 0 --- the classic lost update. One point deserves emphasis: the loss happens because the application reads first and updates later across two sessions; a single atomic \texttt{UPDATE ... SET balance = balance - 50} would not lose anything. The default REPEATABLE READ level does not save us either, since plain SELECTs are non-locking snapshot reads. The fix therefore has two layers. \texttt{SELECT ... FOR UPDATE} serializes the read-modify-write sequence at the isolation layer, while the UNIQUE constraint on \texttt{Payment.trip\_id} blocks a double payment of the same trip at the schema layer. Experiment~3 shows the failure and the fix live.
+Atomicity, consistency, isolation and durability guarantee that transactions either fully succeed or leave no trace, and that committed state satisfies all constraints. With a hypothetical wallet at 100 and two concurrent \$50 deductions, both transactions read 100 and write 50 --- the classic lost update. This happens because the application reads before updating across two sessions; a single atomic \texttt{UPDATE balance = balance - 50} would not lose anything. The default REPEATABLE READ does not prevent it either, since plain SELECTs are non-locking. The fix is two-layered: \texttt{FOR UPDATE} serializes the read-modify-write, while the UNIQUE on \texttt{Payment.trip\_id} blocks double payments at the schema level.
 
 \paragraph{Q6: Indexes and B+ trees.}
-An InnoDB index is a B+ tree. Internal nodes only route the search; the leaves hold keys with row pointers and are linked in key order, which is why range scans read sequentially. One lookup descends the tree in O(log n) steps instead of touching every row. That benefit has a price. Each index takes storage, every INSERT, UPDATE and DELETE has to maintain it, and the optimizer rarely picks an index on a low-selectivity column such as status on its own, so the practical rule is to index the high-selectivity columns that appear in WHERE, JOIN and ORDER BY, and to respect the leftmost-prefix order in composite indexes (for us: status equality first, start\_time range second). Foreign-key columns already get an index automatically (\texttt{Trip.psg\_id}, \texttt{driver\_id}) --- that is why our before/after comparison uses the composite (status, start\_time) as the baseline. Experiment~1 measured the effect: access type changed from ALL to range, estimated rows fell from 60{,}261 to 3{,}259, and actual time dropped from 16.6 ms to 0.46 ms thanks to a covering index.
+An InnoDB index is a B+ tree whose leaves hold keys with row pointers linked in order, so a lookup descends in O(log n) and range scans read sequentially. The cost: each index takes storage, every write maintains it, and the optimizer rarely uses an index on a low-selectivity column alone. The rule is to index high-selectivity columns in WHERE, JOIN and ORDER BY, respecting the leftmost prefix (status equality before start\_time range in our composite index). Foreign-key columns get indexes automatically, which is why our baseline uses (status, start\_time). Experiment 1: ALL $\to$ range, 60{,}261 $\to$ 3{,}259 rows, 16.6 $\to$ 0.46 ms.
 
 \paragraph{Q7: GROUP BY, HAVING vs.\ WHERE.}
-GROUP BY buckets the rows that survive WHERE into one output row per bucket, and the aggregates (COUNT, SUM, AVG, MIN, MAX) are computed inside each bucket; HAVING then decides which buckets survive. The difference from WHERE is timing. WHERE filters individual rows before grouping and cannot reference aggregates, while HAVING filters whole groups after aggregation and can --- putting an aggregate in WHERE is simply a syntax error. Our query ``months with at least 1{,}000 completed trips'' shows the division of labour: non-completed trips are discarded at the row level first (WHERE), the survivors are bucketed by month (GROUP BY), and only buckets reaching the threshold are kept (HAVING COUNT(*) $\ge$ 1000). The logical order FROM $\to$ WHERE $\to$ GROUP BY $\to$ HAVING $\to$ SELECT $\to$ ORDER BY $\to$ LIMIT explains why each filter sits where it sits, and the same three steps drive our Q6 and Q7 reporting queries, where filtering early also keeps each bucket small before the aggregation runs.
+WHERE filters individual rows before grouping and cannot reference aggregates. GROUP BY buckets the survivors into one output row per group. HAVING then filters whole groups after aggregation and may reference aggregates --- an aggregate in WHERE is a syntax error. ``Months with $\ge$ 1{,}000 completed trips'' shows the split: WHERE discards non-completed rows, GROUP BY buckets by month, HAVING keeps only buckets meeting the threshold. The logical order is FROM $\to$ WHERE $\to$ GROUP BY $\to$ HAVING $\to$ SELECT $\to$ ORDER BY $\to$ LIMIT.
 
 \paragraph{Q8: VIEW vs.\ STORED PROCEDURE.}
-A view is a saved SELECT that behaves like a table. It stores no data of its own; the definition is expanded every time the view is queried. That makes it a good fit for reusing a complex query, hiding base tables behind a limited column set, and shielding callers from schema changes. A stored procedure is a different animal: a precompiled server-side program with parameters, control flow and DML, started with CALL. Its body contains semicolons, which is why the definition has to switch the DELIMITER first. The split in our project follows this line. The finance team gets \texttt{v\_completed\_revenue}, a view wrapping the daily completed-revenue query, while collections runs \texttt{sp\_check\_unpaid(24)}, a procedure that takes the overdue threshold as a parameter and is invoked with CALL. A stored FUNCTION sits between the two when a scalar return value is enough. Put simply, a view is queried and a procedure is run.
+A view is a saved SELECT that behaves like a table but stores no data; it is expanded at query time. It suits query reuse, column-level access control, and insulation from schema changes. A stored procedure is a precompiled server-side program with parameters and control flow, invoked with CALL; its body contains semicolons, hence the DELIMITER switch. In our project the finance view \texttt{v\_completed\_revenue} wraps the daily revenue query, while \texttt{sp\_check\_unpaid(24)} parameterizes the collections job. A view is queried; a procedure is run.
