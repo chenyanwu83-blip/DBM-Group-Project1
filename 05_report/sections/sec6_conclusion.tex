@@ -10,6 +10,9 @@
 %   ④ G4 显式回收 "zero missed" 半边（三种反连接同返回 1,442 行即 completeness 证据）
 %   ⑤ 局限恢复 D-10 撰写提醒的④样本规模；read-replica 声明并回③
 %   ⑥ Future work 恢复分区表代价：MySQL 8.0 分区 InnoDB 无 FK
+% v1.2 2026-11-10 E 依教师意见降格三处结论（结论不得强于证据）：
+%   G2 "met"→单次测量达标、P95 待测；G3 "met by design"→设计估算、吞吐量待测；
+%   G4 删 "(zero missed)"——三形态同结果≠零漏检证明，改为待生成器清单交叉核验
 % ============================================================
 \section{Conclusion and Limitations}
 \label{sec:conclusion}
@@ -26,9 +29,9 @@ Table~\ref{tab:goalcheck} closes the five quantified goals of Section~\ref{subse
 \# & Outcome & Evidence \\
 \midrule
 G1 & delivered: 60{,}000 trips (target $\ge$ 50{,}000) & import row-count self-checks; clean re-run on a second machine, all self-checks green \\
-G2 & met in the declared calibre: 0.46\,ms after indexing vs 16.6\,ms before, two orders of magnitude below the 200\,ms bar & Experiment~1, single-run EXPLAIN ANALYZE magnitude on the Q5 predicate---honestly declared, not a measured P95 \\
-G3 & met by design: $\approx$36--72$\times$ write headroom over the 0.69--1.4 TPS peak model & declared design-margin claim, not an experiment acceptance item \\
-G4 & met: 1{,}442 completed-without-payment trips isolated, the identical row set from all three anti-join forms (zero missed), at 82--90\,ms inside the 500\,ms full-run budget & Q2/Q5 anti-join on the full table, Experiment~2 \\
+G2 & single-run query meets the target value: 0.46\,ms after indexing vs 16.6\,ms before (two orders below the 200\,ms bar); \textbf{P95 pending measurement} & Experiment~1, single-run EXPLAIN ANALYZE magnitude on the Q5 predicate \\
+G3 & design estimate only: $\approx$36--72$\times$ write headroom over the 0.69--1.4 TPS peak model; \textbf{throughput pending measurement} & declared design-margin claim, not an experiment acceptance item \\
+G4 & 1{,}442 completed-without-payment trips isolated, identical row set across all three anti-join forms, at 82--90\,ms inside the 500\,ms full-run budget; cross-check against the generator's expected unpaid-trip list \textbf{pending} & Q2/Q5 anti-join on the full table, Experiment~2 \\
 G5 & met: illegal writes rejected by the database itself, zero orphans by the same declarative keys & FK error 1452, UNIQUE 1062, CHECK 3819 demonstrated in Experiment~3 \\
 \bottomrule
 \end{tabular}

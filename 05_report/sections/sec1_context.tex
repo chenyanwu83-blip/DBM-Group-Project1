@@ -18,13 +18,14 @@ This project models a ride-hailing platform from dispatch to trip completion, pa
 
 Under decision D-05, request matching takes place in the application layer. A \texttt{Trip} row is inserted only after successful dispatch, with \texttt{start\_time} recording that time. Unmatched requests are therefore unavailable for analysing total ride demand or matching latency (Section~\ref{sec:conclusion}). Trip status progresses through \texttt{accepted}, \texttt{en\_route} and \texttt{completed}. Early termination after boarding is classified as \texttt{completed}. Under D-06, cancellation before boarding is free within the grace period. Late cancellation or a passenger no-show incurs a \$1.50 fee, subject to a waiver for excessive pickup delays. Each charge, including a cancellation fee, is recorded in \texttt{Payment}~\cite{ubercancelfee,uberengmysql}.
 
-% 图块 2026-11-08 由 E 解封：business_flow.pdf 已导出至 05_report/figures/（导出 A、入工程 E）
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=0.9\textwidth]{business_flow.pdf}
-  \caption{Business process of order dispatch and fulfilment; the matching queue stays outside the database (D-05).}
-  \label{fig:business-flow}
-\end{figure}
+% 图块 2026-11-10 下架（教师意见#1 页数压缩；A 11-09 已表态可砍——正文 §1.1 已覆盖流程信息，ER 图与目标表不压缩）。
+% 恢复：uncomment 下方五行（图源 04_figures/a1_business_flow_report.drawio / figures/business_flow.pdf 在库）
+% \begin{figure}[ht]
+%   \centering
+%   \includegraphics[width=0.9\textwidth]{business_flow.pdf}
+%   \caption{Business process of order dispatch and fulfilment; the matching queue stays outside the database (D-05).}
+%   \label{fig:business-flow}
+% \end{figure}
 
 \subsection{Stakeholders and Their Data Needs}
 \label{subsec:stakeholders}
