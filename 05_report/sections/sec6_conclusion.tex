@@ -1,50 +1,33 @@
-% ============================================================
-% §6 Conclusion and Limitations — A+E 合写 · 页数预算 0.5–1.0
-% rubric：Evaluation 结论有据 3 分——与 §1 目标逐条闭环
-% v0.1 2026-11-06 E 依 §1 目标表与 §5 实测数字起草；待 A 复核合写后定稿
-%   （数字均引自 sec1 tab:goals 与 sec5：16.6→0.46ms / 82–90ms / 1,442 / 1452·1062·3819）
-% v1.1 2026-11-06 A 复核修订（数字未动，仅措辞对齐 §1 tab:goals 口径）：
-%   ① 导语不再声称"全部数字来自 §5 实验"（G1 复跑证据、G3 峰值模型即设计侧口径）
-%   ② 表题与正文锚回 §1 目标表（rubric 要求与 §1 闭环，实验只是证据来源）
-%   ③ G2 Outcome 改回"declared calibre"口径，避免单次采样被读成实测 P95
-%   ④ G4 显式回收 "zero missed" 半边（三种反连接同返回 1,442 行即 completeness 证据）
-%   ⑤ 局限恢复 D-10 撰写提醒的④样本规模；read-replica 声明并回③
-%   ⑥ Future work 恢复分区表代价：MySQL 8.0 分区 InnoDB 无 FK
-% v1.2 2026-11-10 E 依教师意见降格三处结论（结论不得强于证据）：
-%   G2 "met"→单次测量达标、P95 待测；G3 "met by design"→设计估算、吞吐量待测；
-%   G4 删 "(zero missed)"——三形态同结果≠零漏检证明，改为待生成器清单交叉核验
-% v1.3 2026-11-11 E 依组长书面意见(1.0Report修改意见)再收紧：
-%   G2 改 "not yet verified"——单次计数查询仅作证据保留，P95 目标本体未测；
-%   G3 单位修正——0.69–1.4 是 trips/s 到达率，与 50 TPS 目标相除需声明
-%   "一行程一事务"假设，且明写 no load test、目标未验证（对齐 §1.3 边界句）
-% ============================================================
+% Section 6 — CHEN Yinan / HU Zhongyuan
+% DeepL translation with technical review, 2026-11-11.
 \section{Conclusion and Limitations}
 \label{sec:conclusion}
 
+% 中文概述：G1样本量达到；G2/G3待验证；G4计数一致，编号与检索耗时待核验；G5负例通过，全库孤儿检查需证据。
 \subsection{Goal Recheck}
-Table~\ref{tab:goalcheck} closes the five quantified goals of Section~\ref{subsec:goals}, each row at its declared verification scope (Table~\ref{tab:goals}) --- nothing is upgraded in the retelling.
+Table~\ref{tab:goalcheck} reviews the goals defined in Table~\ref{tab:goals} against the available evidence.
 
 \begin{table}[H]  % 2026-11-11 [ht]→[H]：目标复核表曾漂出正文落入附录 A 页（组长意见14 同类问题），钉回 §6
-\centering\small
+\centering
 \caption{Goal recheck against the quantified goals of Section~\ref{subsec:goals}}
 \label{tab:goalcheck}
-\begin{tabular}{@{}lp{6.9cm}p{6.9cm}@{}}
+\begin{tabular}{@{}lp{7.0cm}p{6.5cm}@{}}
 \toprule
 \# & Outcome & Evidence \\
 \midrule
-G1 & delivered: 60{,}000 trips (target $\ge$ 50{,}000) & import row-count self-checks; clean re-run on a second machine, all self-checks green \\
-G2 & not yet verified at P95: only the Experiment~1 count query was measured --- 16.6\,ms before indexing, 0.46\,ms after, two orders below the 200\,ms bar; Top-5 workload P95 pending & Experiment~1, single-run EXPLAIN ANALYZE magnitude on the Q5 predicate \\
-G3 & not verified: no load test was run and the 50\,TPS target remains unvalidated (Section~\ref{subsec:goals}); $\approx$36--72$\times$ is that target over the estimated 0.69--1.4 \emph{trips}/s peak arrival rate (one DB transaction per trip assumed), not measured headroom & declared design-margin claim, not an experiment acceptance item \\
-G4 & 1{,}442 unpaid trips isolated, identical row set across all three anti-join forms, 82--90\,ms inside the 500\,ms full-run budget; generator-list cross-check \textbf{pending} & Q2/Q5 anti-join on the full table, Experiment~2 \\
-G5 & met: illegal writes rejected by the database itself, zero orphans by the same declarative keys & FK error 1452, UNIQUE 1062, CHECK 3819 demonstrated in Experiment~3 \\
+G1 & Sample-size target achieved, with 60{,}000 trips. & Imported row counts and a rebuild on a second machine. \\
+G2 & P95 remains unverified. The representative count query took 16.6\,ms before indexing and 0.46\,ms after. & Single-run measurement in Experiment~1. \\
+G3 & The provisional 50 TPS target remains unverified. & No defined load test or throughput measurement. \\
+G4 & Each COUNT query returned a count of 1{,}442. Expected trip IDs and full retrieval latency remain unverified. & Experiment~2 reports 82--90\,ms. The corresponding SQL and timing scope require confirmation. \\
+G5 & Invalid writes in the tests were rejected. Full-database orphan-check results require separate evidence. & Errors 1452, 1062 and 3819 in Experiment~3. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+% 中文概述：全量标定仅支持描述性对照；未匹配请求缺失、单次性能测量、细分样本较少。
 \subsection{Limitations}
-Four boundaries should be read alongside these results. First, the dataset is synthetic: agreement with the RideAustin holdout (Section~\ref{sec:eval}) reflects the generator's calibration rules, not real-world fit, so we report similarity and make no causal claims; the 15-zone pickup distribution is a declared course setting. Second, by decision D-05 unmatched requests never enter the database, so order volume, dispatch success rate and matching latency cannot be analysed in this schema. Third, all performance figures are single-run magnitudes on one laptop-scale MySQL instance at 60{,}000 rows --- order-of-magnitude evidence, not measured percentiles --- and the read-replica tier (Section~\ref{subsec:goals}) remains a declared stance rather than a deployed component. Fourth, the sample is thin in its tails: with 150 drivers and $\approx$180 LUXURY trips, per-tier and per-driver aggregates are illustrative rather than statistically significant.
+The synthetic sample demonstrates system behaviour under the selected generation rules. Parameters are based on full-dataset RideAustin statistics, so the comparison is descriptive and independent holdout validation remains unestablished. Unmatched requests are absent, limiting demand and matching analyses. Single-run measurements on one instance do not establish P95, throughput or production-scale performance. The 150 drivers and approximately 180 LUXURY trips also limit subgroup comparisons.
 
+% 中文概述：重复测量查询、定义负载压测、独立编号对账，以及请求记录、副本和归档评估。
 \subsection{Future Work}
-Three extensions follow naturally. Partitioning \texttt{Trip} by \texttt{start\_time} would turn the 180-day retention window into a drop-partition archival job instead of row-by-row deletes, at a real cost: MySQL~8.0 allows no foreign keys on partitioned InnoDB tables, and \texttt{Trip} both carries foreign keys and is referenced by \texttt{Payment} and \texttt{trip\_detail}, so the gain trades declarative integrity for application-layer enforcement. Deploying the declared read replica would route the wide aggregate reads away from the write-heavy primary. Finally, a pre-insert matching-event table (request, driver offer, dispatch outcome) would close the D-05 scope gap; re-modelling that event stream against a document store would be the natural next experiment.
-
-% TODO(E): 润色合并后走 11-08 全员确认冻结；G1–G5 数字与 §5 定稿逐一对账无错引（A 2026-11-06 复核）
+Future work should repeat the five complete queries to measure P95 and test throughput under a defined transaction workload. An independent expected set of trip IDs would support reconciliation checks. Further extensions include recording pre-dispatch requests, evaluating a read replica and archiving historical records before removing expired online data. These extensions also require correctness and performance evaluation.

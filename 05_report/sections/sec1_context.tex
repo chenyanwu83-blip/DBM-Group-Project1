@@ -1,28 +1,31 @@
 % Section 1 — Business Context and Goals
 % Author: CHEN Yinan (Role A)
 % Revised: 2026-11-11
-% Based on DeepL translation with terminology and evidence review.
+% DeepL translation reviewed for terminology, evidence scope and academic phrasing (2026-11-11).
 % G2/G3/G4 are targets pending full verification.
 % Calibration provenance follows the current repository documentation.
 \section{Business Context and Goals}
 \label{sec:context}
 
+% 中文概述：业务背景：八实体；匹配成功后入库；车辆与支付关系由约束控制。
 \subsection{Business Context}
 \label{subsec:background}
 
-This project develops a relational database for a ride-hailing platform to support trip queries, payment reconciliation and operational reporting. It retains five base entities, \texttt{Passenger}, \texttt{Driver}, \texttt{Vehicle}, \texttt{Trip} and \texttt{Payment}, and adds \texttt{trip\_detail}, \texttt{service\_tier} and \texttt{pickup\_zone}. These eight entities connect trips with their participants, payments, service tiers, pickup zones and optional ratings.
+This project builds a relational database for a ride-hailing platform to support trip queries, payment reconciliation and operational reporting. It retains five base entities, \texttt{Passenger}, \texttt{Driver}, \texttt{Vehicle}, \texttt{Trip} and \texttt{Payment}, and adds \texttt{trip\_detail}, \texttt{service\_tier} and \texttt{pickup\_zone}. The extension tables associate service tiers, pickup zones and optional ratings with trips, giving eight entities in total.
 
-Foreign keys and unique constraints maintain valid relationships between records. Each driver is assigned one vehicle, each vehicle has at most one driver, and each trip has at most one payment. The generator also creates one detail record for every trip.
+Foreign key and unique constraints ensure valid relationships between records. Each driver is assigned one vehicle, each vehicle has at most one driver, and each trip has at most one payment. The generator also creates one detail record for every trip.
 
-The recorded workflow begins after successful dispatch, when the driver accepts the request. Unmatched requests therefore fall outside the database scope. Trip status progresses through \texttt{accepted}, \texttt{en\_route} and \texttt{completed}. Early termination after boarding is classified as completed. Before boarding, cancellation may be free or charged. The course-defined cancellation fee is USD~1.50, subject to a waiver for excessive pickup delays. Actual charges are recorded in \texttt{Payment}~\cite{ubercancelfee,uberengmysql}.
+The recorded workflow begins after successful dispatch, when the driver accepts the request. Unmatched requests therefore fall outside the database scope. Trip status progresses through \texttt{accepted}, \texttt{en\_route} and \texttt{completed}. Early termination after boarding is classified as completed. Before boarding, cancellation may be free or charged. The course-defined cancellation fee is USD~1.50, subject to a waiver for excessive pickup delays. Actual charges are recorded in \texttt{Payment}~\cite{ubercancelfee,uberengmysql}. Figure~\ref{fig:business-flow} in Appendix~\ref{app:screens} summarises the workflow.
 
+% 中文概述：利益相关者：乘客、司机、运营、财务、客服各有两项需求。
 \subsection{Stakeholder Requirements}
 \label{subsec:stakeholders}
 
 Passengers need trip histories and fare/payment reconciliation. Drivers need cumulative trip and fare totals and verifiable vehicle assignments. Operations staff require peak-hour trip volumes, cancellation rates and assignment information. Finance staff need unpaid-trip reconciliation and payment totals by method. Customer service requires complete trip records within 30 seconds to investigate disputed fares.
 
-These requirements guide the relationships, integrity constraints and queries developed in the following sections.
+These requirements form the basis for the database relationships, integrity constraints and queries.
 
+% 中文概述：目标是待验收要求；单实例故障暂停写入，失败事务整体回滚属于设计要求。
 \subsection{Goals and Constraints}
 \label{subsec:goals}
 
@@ -32,28 +35,29 @@ The project defines five goals, each with an associated verification method (Tab
 \centering
 \caption{Design goals and verification methods}
 \label{tab:goals}
-\begin{tabular}{@{}p{2.3cm}p{5.0cm}p{7.0cm}@{}}
+\begin{tabular}{@{}lp{5.4cm}p{8.1cm}@{}}
 \toprule
 Goal & Target & Verification \\
 \midrule
-G1 Sample size & At least 50{,}000 trips & Check row counts after import. \\
-G2 Query latency & Top-5 query P95 below 200\,ms & Repeatedly execute the complete queries. \\
-G3 Write throughput & Provisional target of 50 TPS & Define the transaction workload and conduct load tests. \\
-G4 Reconciliation & Identify all unpaid completed trips within 500\,ms & Compare returned trip IDs with an independent expected set and measure execution time. \\
-G5 Referential integrity & Zero orphan records and rejection of invalid writes & Check for orphan records and test constraint violations. \\
+G1 & At least 50{,}000 trips & Check row counts after import. \\
+G2 & Top-5 query P95 below 200\,ms & Repeatedly execute the complete queries. \\
+G3 & Provisional target of 50 TPS & Define the transaction workload and conduct load tests. \\
+G4 & Identify all unpaid completed trips within 500\,ms & Compare returned trip IDs with an independent expected set and measure execution time. \\
+G5 & Zero orphan records and rejection of invalid writes & Check for orphan records and test constraint violations. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 These are design targets. The Top-5 queries are Q6, Q1, Q5, Q2 and Q7. Section~\ref{sec:eval} reports the available evidence, and Section~\ref{sec:conclusion} reviews their achievement. G2 requires repeated query measurements, while G3 requires load testing before throughput can be confirmed.
 
-Dispatch and payment operations require consistent data, while customer-service queries require the latest trip status. Periodic reports can tolerate brief delays, making a read replica a possible future extension. The current implementation uses one MySQL instance. Other constraints include compatibility with MySQL 8.0.45, rebuilding within 30 minutes using fixed-seed repository scripts, and a proposed 180-day online retention policy with archival of older records.
+At sample scale, a single instance simplifies deployment and consistency management. The design prioritises consistent dispatch and payment records, with writes suspended during an instance outage. Failed multi-step transactions should roll back all their updates. Reporting may tolerate minute-level staleness as a design assumption, while customer-service queries require current data. Reports and writes share the same instance, so a future read replica could reduce resource contention. Availability and replica performance require further testing. Other constraints include MySQL 8.0.45 compatibility, rebuilding within 30 minutes using fixed-seed scripts, and 180-day online retention followed by archiving.
 
+% 中文概述：参数来自全量统计；描述性比较，不声称已完成独立留出验证。
 \subsection{Dataset Selection}
 \label{subsec:dataset}
 
 The project uses synthetic data because the public datasets considered do not provide all the identifiers, vehicle assignments and payment relationships required by the schema~\cite{tlctripdata}. Fixed-seed generation allows members to rebuild the same dataset and reproduce query results.
 
-Generation parameters reference full-dataset RideAustin statistics for service tiers, fares and ratings~\cite{zuniga2020rideaustin}. The comparison is descriptive, as training-only calibration has not been independently verified. Cancellations, payment methods, unpaid rates and pickup zones are course assumptions.
+Generation parameters are based on full-dataset RideAustin statistics for service tiers, fares and ratings~\cite{zuniga2020rideaustin}. The comparison is therefore descriptive. Training-only calibration lacks independently verifiable evidence. Cancellations, payment methods, unpaid rates and pickup zones are course assumptions.
 
 The final sample contains 60{,}000 trips spanning one year, supporting monthly reporting demonstrations. It intentionally includes 1{,}442 completed trips without payment records for reconciliation tests. The sample includes historical records, while the 180-day online retention and archival policy remains a design requirement.

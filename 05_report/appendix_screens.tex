@@ -72,3 +72,12 @@ Screenshots at full width, as executed in MySQL Workbench on the 60{,}000-trip s
 \includegraphics[width=\textwidth]{ddl_trip_detail_1101_a.png}
 \caption{\texttt{trip\_detail} DDL: PK-as-FK, three FKs, rating CHECK.}\label{fig:tripdetail}
 \end{figure}
+
+% A: concise business workflow, separate appendix page for legibility.
+\clearpage
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.9\textwidth,height=0.84\textheight,keepaspectratio]{business_flow.pdf}
+\caption{Ride-hailing business process. Unmatched requests remain outside the database. Dashed flow indicates an optional rating, independent of payment.}
+\label{fig:business-flow}
+\end{figure}
