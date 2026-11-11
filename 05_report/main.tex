@@ -14,6 +14,7 @@
 \usepackage[a4paper,margin=2.5cm]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}      % §5 结果表统一三线表
+\usepackage{float}         % [H] 钉住贡献表，防漂入附录 B 脚本续文（组长意见14）
 \usepackage{listings}      % SQL/脚本排版
 \usepackage{xcolor}
 \usepackage{url}
@@ -83,6 +84,7 @@
 % ================= 附录 =================
 \appendix
 \input{appendix_contribution}   % 附录 A 贡献表（E）
-\input{appendix_sql}            % 附录 B 完整脚本（C 供、E 排版）
+\input{appendix_sql}            % 附录 B 完整脚本+查询清单（C 供、E 排版）
+\input{appendix_screens}        % 附录 C 查询结果截图（D 供图、E 排版，2026-11-10 压页增设）
 
 \end{document}

@@ -13,6 +13,10 @@
 % v1.2 2026-11-10 E 依教师意见降格三处结论（结论不得强于证据）：
 %   G2 "met"→单次测量达标、P95 待测；G3 "met by design"→设计估算、吞吐量待测；
 %   G4 删 "(zero missed)"——三形态同结果≠零漏检证明，改为待生成器清单交叉核验
+% v1.3 2026-11-11 E 依组长书面意见(1.0Report修改意见)再收紧：
+%   G2 改 "not yet verified"——单次计数查询仅作证据保留，P95 目标本体未测；
+%   G3 单位修正——0.69–1.4 是 trips/s 到达率，与 50 TPS 目标相除需声明
+%   "一行程一事务"假设，且明写 no load test、目标未验证（对齐 §1.3 边界句）
 % ============================================================
 \section{Conclusion and Limitations}
 \label{sec:conclusion}
@@ -20,7 +24,7 @@
 \subsection{Goal Recheck}
 Table~\ref{tab:goalcheck} closes the five quantified goals of Section~\ref{subsec:goals} one by one, each row keeping the verification calibre declared in Table~\ref{tab:goals}: an experiment measurement of Section~\ref{sec:eval} where one exists, a declared design-side claim where it does not---nothing is upgraded in the retelling.
 
-\begin{table}[ht]
+\begin{table}[H]  % 2026-11-11 [ht]→[H]：目标复核表曾漂出正文落入附录 A 页（组长意见14 同类问题），钉回 §6
 \centering\small
 \caption{Goal recheck against the quantified goals of Section~\ref{subsec:goals} (Table~\ref{tab:goals})}
 \label{tab:goalcheck}
@@ -29,8 +33,8 @@ Table~\ref{tab:goalcheck} closes the five quantified goals of Section~\ref{subse
 \# & Outcome & Evidence \\
 \midrule
 G1 & delivered: 60{,}000 trips (target $\ge$ 50{,}000) & import row-count self-checks; clean re-run on a second machine, all self-checks green \\
-G2 & single-run query meets the target value: 0.46\,ms after indexing vs 16.6\,ms before (two orders below the 200\,ms bar); \textbf{P95 pending measurement} & Experiment~1, single-run EXPLAIN ANALYZE magnitude on the Q5 predicate \\
-G3 & design estimate only: $\approx$36--72$\times$ write headroom over the 0.69--1.4 TPS peak model; \textbf{throughput pending measurement} & declared design-margin claim, not an experiment acceptance item \\
+G2 & not yet verified: the only measurement is the single-run count query of Experiment~1 --- 16.6\,ms before indexing, 0.46\,ms after, two orders below the 200\,ms bar; the Top-5 workload P95 itself is pending measurement & Experiment~1, single-run EXPLAIN ANALYZE magnitude on the Q5 predicate \\
+G3 & not verified: no load test was run and the 50\,TPS target remains unvalidated (Section~\ref{subsec:goals}); $\approx$36--72$\times$ is that target capacity divided by the estimated 0.69--1.4 \emph{trips}/s peak arrival rate (one DB transaction per trip assumed), not measured headroom & declared design-margin claim, not an experiment acceptance item \\
 G4 & 1{,}442 completed-without-payment trips isolated, identical row set across all three anti-join forms, at 82--90\,ms inside the 500\,ms full-run budget; cross-check against the generator's expected unpaid-trip list \textbf{pending} & Q2/Q5 anti-join on the full table, Experiment~2 \\
 G5 & met: illegal writes rejected by the database itself, zero orphans by the same declarative keys & FK error 1452, UNIQUE 1062, CHECK 3819 demonstrated in Experiment~3 \\
 \bottomrule

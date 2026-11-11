@@ -1,35 +1,21 @@
 % §4 SQL Queries and Conceptual Q&A — D 主笔
 % 2026-11-09 D 压缩版：问答~110词/题; 解读合并; 去总览表; caption精简
 % SQL 与 02_sql/queries/ 逐字一致; 截图与 figures/ 一一对应
+% 2026-11-11 E 页数整改（老师口径：附录不计 10–12 页正文）：十个 SQL 清单
+%   逐字移入附录 B.2（appendix_sql.tex），正文保留解读段 + 截图对；
+%   截图中本身可见完整语句，附录为文本版。如需回移按 git 历史恢复。
+% 2026-11-11 E 二次瘦身（组长意见1/14）：截图对 Q3/Q4、Q5/Q6、Q7/Q8
+%   全宽移入附录 C（更大更可读，不计页数）；正文留 Q1/Q2（对账核心）
+%   与 Q9/Q10（扩展表验证）两对。
 \section{SQL Queries and Conceptual Q\&A}
 \label{sec:sql}
 
 \subsection{Business Queries}
 
-Ten queries answer the workload, all executed on the 60{,}000-trip sample. Each listing below is the exact SQL from \texttt{02\_sql/queries/}; screenshots are archived in the repository.
+Ten queries answer the workload, all executed on the 60{,}000-trip sample. Each statement is shown below or in Appendix~\ref{app:queries} exactly as executed in Workbench, alongside its result set; the remaining result screenshots are collected at full width in Appendix~\ref{app:screens}.
 
 \paragraph{Q1--Q2: Payment reconciliation and collections.}
 Q1 pairs every completed trip with its payment via the UNIQUE \texttt{trip\_id} join --- \texttt{fare} equals \texttt{amount} row by row. Card is the dominant payment method. Q2 flips the join into a \texttt{NOT EXISTS} anti-join to find drivers with uncollected fares: 150 drivers, 1{,}442 trips. Cancelled trips carrying the \$1.50 fee already have a Payment row, so they stay off the list.
-
-\begin{lstlisting}[caption={Q1: completed trips with payment.}]
-SELECT t.trip_id, t.psg_id, t.driver_id, t.fare,
-       p.pay_id, p.amount, p.method
-FROM Trip t
-     INNER JOIN Payment p ON p.trip_id = t.trip_id
-WHERE t.status = 'completed'
-ORDER BY t.start_time DESC;
-\end{lstlisting}
-
-\begin{lstlisting}[caption={Q2: completed but unpaid drivers.}]
-SELECT DISTINCT d.driver_id, d.name
-FROM Driver d
-     INNER JOIN Trip t ON t.driver_id = d.driver_id
-WHERE t.status = 'completed'
-      AND NOT EXISTS (SELECT 1
-                       FROM Payment p
-                       WHERE p.trip_id = t.trip_id)
-ORDER BY d.driver_id;
-\end{lstlisting}
 
 \begin{figure}[ht]\centering
 \begin{minipage}[t]{0.485\textwidth}\centering
@@ -43,139 +29,16 @@ ORDER BY d.driver_id;
 \end{figure}
 
 \paragraph{Q3--Q4: Revenue by vehicle and by driver-day.}
-Q3 aggregates across \texttt{Vehicle}$\to$\texttt{Driver}$\to$\texttt{Trip}; revenue is balanced (head vehicles 440--460 trips vs.\ fleet average 400). Q4 ranks driver-days with \texttt{RANK() OVER} on the aggregated daily income --- one pass, no self-join. The top earner makes \$292 in a single day.
-
-\begin{lstlisting}[caption={Q3: total fare per vehicle.}]
-SELECT v.plate,
-       ROUND(SUM(t.fare), 2) AS total_fare,
-       COUNT(*) AS trip_cnt
-FROM Vehicle v
-     INNER JOIN Driver d ON d.vehicle_id = v.vehicle_id
-     INNER JOIN Trip   t ON t.driver_id  = d.driver_id
-GROUP BY v.vehicle_id, v.plate
-ORDER BY total_fare DESC;
-\end{lstlisting}
-
-\begin{lstlisting}[caption={Q4: driver daily income ranking.}]
-SELECT driver_id, income_date, day_income,
-       RANK() OVER (ORDER BY day_income DESC) AS rnk
-FROM (SELECT driver_id,
-              DATE(start_time) AS income_date,
-              ROUND(SUM(fare), 2) AS day_income
-       FROM Trip
-       WHERE status = 'completed'
-       GROUP BY driver_id, DATE(start_time)) AS daily
-ORDER BY rnk
-LIMIT 10;
-\end{lstlisting}
-
-\begin{figure}[ht]\centering
-\begin{minipage}[t]{0.485\textwidth}\centering
-\includegraphics[width=\linewidth]{q03_vehicle_revenue_1029.png}\\[2pt]
-{\small (a) Q3: 150-vehicle fleet.}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.485\textwidth}\centering
-\includegraphics[width=\linewidth]{q04_driver_daily_income_1029.png}\\[2pt]
-{\small (b) Q4: top-10 driver-days.}
-\end{minipage}
-\end{figure}
+Q3 aggregates across \texttt{Vehicle}$\to$\texttt{Driver}$\to$\texttt{Trip}; revenue is balanced (head vehicles 440--460 trips vs.\ fleet average 400). Q4 ranks driver-days with \texttt{RANK() OVER} on the aggregated daily income --- one pass, no self-join. The top earner makes \$292 in a single day. (Screenshots: Appendix~\ref{app:screens}.)
 
 \paragraph{Q5--Q6: Collections exposure and dispatch planning.}
-Q5 filters unpaid completed trips beyond 24 hours --- all 1{,}442 qualify because the simulated history ends before load time; the threshold would isolate overdue receivables in production. Q6 groups trips by hour and keeps hours above 2{,}000 trips with \texttt{HAVING}, something \texttt{WHERE} cannot do. The evening block 17:00--20:00 carries 22.4\% of volume, peaking at hour 18.
-
-\begin{lstlisting}[caption={Q5: unpaid $>$24h.}]
-SELECT t.trip_id, t.driver_id, t.fare, t.start_time,
-       TIMESTAMPDIFF(HOUR, t.start_time, NOW()) AS hours_unpaid
-FROM Trip t
-WHERE t.status = 'completed'
-      AND t.start_time < NOW() - INTERVAL 24 HOUR
-      AND NOT EXISTS (SELECT 1 FROM Payment p WHERE p.trip_id = t.trip_id)
-ORDER BY hours_unpaid DESC;
-\end{lstlisting}
-
-\begin{lstlisting}[caption={Q6: peak-hour volume.}]
-SELECT HOUR(start_time) AS hr,
-       COUNT(*) AS trips
-FROM Trip
-GROUP BY HOUR(start_time)
-HAVING COUNT(*) >= 2000
-ORDER BY trips DESC;
-\end{lstlisting}
-
-\begin{figure}[ht]\centering
-\begin{minipage}[t]{0.485\textwidth}\centering
-\includegraphics[width=\linewidth]{q05_unpaid_over_24h_1029.png}\\[2pt]
-{\small (a) Q5 (first 1{,}000 of 1{,}442).}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.485\textwidth}\centering
-\includegraphics[width=\linewidth]{q06_peak_hours_1029.png}\\[2pt]
-{\small (b) Q6: 14 hours above threshold.}
-\end{minipage}
-\end{figure}
+Q5 filters unpaid completed trips beyond 24 hours --- all 1{,}442 qualify because the simulated history ends before load time; the threshold would isolate overdue receivables in production. Q6 groups trips by hour and keeps hours above 2{,}000 trips with \texttt{HAVING}, something \texttt{WHERE} cannot do. The evening block 17:00--20:00 carries 22.4\% of volume, peaking at hour 18. (Screenshots: Appendix~\ref{app:screens}.)
 
 \paragraph{Q7--Q8: Trends and retention.}
-Q7 joins payments to trip months: revenue climbs from \$49.3k to \$54.8k over twelve months, about +11\% with no dip. Q8 keeps passengers active on two or more distinct days --- the heaviest rides 79 trips across 74 days.
-
-\begin{lstlisting}[caption={Q7: monthly revenue.}]
-SELECT DATE_FORMAT(t.start_time, '%Y-%m') AS ym,
-       COUNT(*) AS paid_trips,
-       ROUND(SUM(p.amount), 2) AS revenue
-FROM Trip t
-     INNER JOIN Payment p ON p.trip_id = t.trip_id
-GROUP BY DATE_FORMAT(t.start_time, '%Y-%m')
-ORDER BY ym;
-\end{lstlisting}
-
-\begin{lstlisting}[caption={Q8: repeat passengers.}]
-SELECT p.psg_id, p.name,
-       COUNT(*) AS total_trips,
-       COUNT(DISTINCT DATE(t.start_time)) AS active_days
-FROM Passenger p
-     INNER JOIN Trip t ON t.psg_id = p.psg_id
-GROUP BY p.psg_id, p.name
-HAVING COUNT(DISTINCT DATE(t.start_time)) >= 2
-ORDER BY active_days DESC, total_trips DESC;
-\end{lstlisting}
-
-\begin{figure}[ht]\centering
-\begin{minipage}[t]{0.485\textwidth}\centering
-\includegraphics[width=\linewidth]{q07_monthly_revenue_1029.png}\\[2pt]
-{\small (a) Q7: twelve months.}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.485\textwidth}\centering
-\includegraphics[width=\linewidth]{q08_repeat_passengers_1029.png}\\[2pt]
-{\small (b) Q8 (first 1{,}000 rows).}
-\end{minipage}
-\end{figure}
+Q7 joins payments to trip months: revenue climbs from \$49.3k to \$54.8k over twelve months, about +11\% with no dip. Q8 keeps passengers active on two or more distinct days --- the heaviest rides 79 trips across 74 days. (Screenshots: Appendix~\ref{app:screens}.)
 
 \paragraph{Q9--Q10: Spatial and product-line views from the extension tables.}
 Q9 joins through \texttt{trip\_detail} to \texttt{pickup\_zone}: the top three zones absorb 34.6\% of accepted trips (Downtown 16.9\%, West Campus 9.4\%, South Congress 8.2\%). This counts accepted trips only --- requests without a driver are outside the data. Q10 joins to \texttt{service\_tier} and uses \texttt{COUNT(rating)} for coverage (NULL-skipping) and \texttt{AVG(rating)} for the mean: fare climbs 3$\times$ across tiers while ratings stay flat at 4.85.
-
-\begin{lstlisting}[caption={Q9: accepted trips per zone.}]
-SELECT z.zone_id, z.name,
-       COUNT(*) AS accepted_trips
-FROM Trip t
-     JOIN trip_detail td ON td.trip_id = t.trip_id
-     JOIN pickup_zone z  ON z.zone_id   = td.zone_id
-GROUP BY z.zone_id, z.name
-ORDER BY accepted_trips DESC
-LIMIT 15;
-\end{lstlisting}
-
-\begin{lstlisting}[caption={Q10: service tier vs.\ rating.}]
-SELECT st.name AS tier,
-       COUNT(*) AS completed_trips,
-       ROUND(AVG(t.fare), 2) AS avg_fare,
-       COUNT(td.rating) AS rated_trips,
-       ROUND(COUNT(td.rating) / COUNT(*) * 100, 1) AS rating_cov_pct,
-       ROUND(AVG(td.rating), 2) AS avg_rating
-FROM Trip t
-     JOIN trip_detail td  ON td.trip_id = t.trip_id
-     JOIN service_tier st ON st.tier_id = td.service_tier_id
-WHERE t.status = 'completed'
-GROUP BY st.tier_id, st.name
-ORDER BY completed_trips DESC;
-\end{lstlisting}
 
 \begin{figure}[ht]\centering
 \begin{minipage}[t]{0.485\textwidth}\centering
