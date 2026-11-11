@@ -54,6 +54,6 @@ Dispatch and payment operations require consistent data, while customer-service 
 
 The project uses synthetic data because the public datasets considered do not provide all the identifiers, vehicle assignments and payment relationships required by the schema~\cite{tlctripdata}. Fixed-seed generation allows members to rebuild the same dataset and reproduce query results.
 
-Generation parameters reference full-dataset RideAustin statistics for service tiers, fares and ratings~\cite{zuniga2020rideaustin}. % 2026-11-11 E：合并重复 bib 条目，引用键同步（rideaustin-data 并入） Comparisons with these statistics describe similarities in selected measures. Independent holdout validation requires confirmation that parameter estimation and evaluation use separate records. Cancellation rules, payment methods, unpaid rates and the 15 pickup zones are course-defined assumptions.
+Generation parameters reference full-dataset RideAustin statistics for service tiers, fares and ratings~\cite{zuniga2020rideaustin}. The comparison is descriptive, as training-only calibration has not been independently verified. Cancellations, payment methods, unpaid rates and pickup zones are course assumptions.
 
 The final sample contains 60{,}000 trips spanning one year, supporting monthly reporting demonstrations. It intentionally includes 1{,}442 completed trips without payment records for reconciliation tests. The sample includes historical records, while the 180-day online retention and archival policy remains a design requirement.
