@@ -1,15 +1,12 @@
 <?xml version='1.0' encoding='utf-8'?>
 <mxfile host="app.diagrams.net" version="24.7.8">
   <diagram id="a1-business-flow-report" name="Business flow - D05 D06 D11">
-    <mxGraphModel dx="1100" dy="1550" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1650" math="0" shadow="0">
+    <mxGraphModel dx="1100" dy="1550" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1100" pageHeight="1490" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="title" value="&lt;b&gt;Ride-hailing business process&lt;/b&gt;" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=25;fontColor=#34495e;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="30" y="15" width="1040" height="35" />
-        </mxCell>
-        <mxCell id="subtitle" value="Request → dispatch → trip → payment · D-05 / D-06 / D-11" style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=17;fontColor=#34495e;" vertex="1" parent="1">
-          <mxGeometry as="geometry" x="30" y="50" width="1040" height="30" />
         </mxCell>
         <mxCell id="request" value="Passenger requests a ride" style="ellipse;whiteSpace=wrap;html=1;fillColor=#f2f4f7;strokeColor=#7b8794;strokeWidth=1.5;fontColor=#203348;fontFamily=Arial;fontSize=17;align=center;verticalAlign=middle;spacing=8;" vertex="1" parent="1">
           <mxGeometry as="geometry" x="365" y="100" width="250" height="55" />
@@ -126,10 +123,7 @@
         <mxCell id="e16" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=1;strokeColor=#536879;strokeWidth=1.5;fontFamily=Arial;fontSize=15;fontColor=#203348;labelBackgroundColor=#ffffff;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" edge="1" parent="1" source="payment" target="end">
           <mxGeometry as="geometry" relative="1" />
         </mxCell>
-        <mxCell id="notes" value="&lt;b&gt;Reading the diagram.&lt;/b&gt; Rounded boxes = actions; diamonds = decisions; ovals / terminal boxes = outcomes.&lt;br&gt;Dashed arrow = optional update. Cancellations occur before boarding; early termination after boarding is completed.&lt;br&gt;&lt;b&gt;Course assumptions.&lt;/b&gt; Grace period ≈3 min; cancellation fee $1.50. Application enforces transitions, one detail per trip,&lt;br&gt;completed-only ratings and charging policy. DB enforces PK / FK / UNIQUE and CHECK(amount ≥ 0, rating 1–5 or NULL).&lt;br&gt;&lt;b&gt;Sample check.&lt;/b&gt; 1,442 completed trips have no Payment (≈2.9% of completed trips); Q2 / Q5 expose this subset." style="text;html=1;whiteSpace=wrap;align=left;verticalAlign=middle;fontFamily=Arial;fontSize=14;fontColor=#34495e;" vertex="1" parent="1">
-          <mxGeometry as="geometry" x="30" y="1485" width="1040" height="120" />
-        </mxCell>
-      </root>
+        </root>
     </mxGraphModel>
   </diagram>
 </mxfile>
