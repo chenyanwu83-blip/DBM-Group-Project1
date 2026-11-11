@@ -22,29 +22,29 @@
 \label{sec:conclusion}
 
 \subsection{Goal Recheck}
-Table~\ref{tab:goalcheck} closes the five quantified goals of Section~\ref{subsec:goals} one by one, each row keeping the verification scope declared in Table~\ref{tab:goals}: an experiment measurement of Section~\ref{sec:eval} where one exists, a declared design-side claim where it does not---nothing is upgraded in the retelling.
+Table~\ref{tab:goalcheck} closes the five quantified goals of Section~\ref{subsec:goals}, each row at its declared verification scope (Table~\ref{tab:goals}) --- nothing is upgraded in the retelling.
 
 \begin{table}[H]  % 2026-11-11 [ht]→[H]：目标复核表曾漂出正文落入附录 A 页（组长意见14 同类问题），钉回 §6
 \centering\small
 \caption{Goal recheck against the quantified goals of Section~\ref{subsec:goals}}
 \label{tab:goalcheck}
-\begin{tabular}{@{}lp{5.4cm}p{5.2cm}@{}}
+\begin{tabular}{@{}lp{6.9cm}p{6.9cm}@{}}
 \toprule
 \# & Outcome & Evidence \\
 \midrule
 G1 & delivered: 60{,}000 trips (target $\ge$ 50{,}000) & import row-count self-checks; clean re-run on a second machine, all self-checks green \\
-G2 & not yet verified: the only measurement is the single-run count query of Experiment~1 --- 16.6\,ms before indexing, 0.46\,ms after, two orders below the 200\,ms bar; the Top-5 workload P95 itself is pending measurement & Experiment~1, single-run EXPLAIN ANALYZE magnitude on the Q5 predicate \\
-G3 & not verified: no load test was run and the 50\,TPS target remains unvalidated (Section~\ref{subsec:goals}); $\approx$36--72$\times$ is that target capacity divided by the estimated 0.69--1.4 \emph{trips}/s peak arrival rate (one DB transaction per trip assumed), not measured headroom & declared design-margin claim, not an experiment acceptance item \\
-G4 & 1{,}442 completed-without-payment trips isolated, identical row set across all three anti-join forms, at 82--90\,ms inside the 500\,ms full-run budget; cross-check against the generator's expected unpaid-trip list \textbf{pending} & Q2/Q5 anti-join on the full table, Experiment~2 \\
+G2 & not yet verified at P95: only the Experiment~1 count query was measured --- 16.6\,ms before indexing, 0.46\,ms after, two orders below the 200\,ms bar; Top-5 workload P95 pending & Experiment~1, single-run EXPLAIN ANALYZE magnitude on the Q5 predicate \\
+G3 & not verified: no load test was run and the 50\,TPS target remains unvalidated (Section~\ref{subsec:goals}); $\approx$36--72$\times$ is that target over the estimated 0.69--1.4 \emph{trips}/s peak arrival rate (one DB transaction per trip assumed), not measured headroom & declared design-margin claim, not an experiment acceptance item \\
+G4 & 1{,}442 unpaid trips isolated, identical row set across all three anti-join forms, 82--90\,ms inside the 500\,ms full-run budget; generator-list cross-check \textbf{pending} & Q2/Q5 anti-join on the full table, Experiment~2 \\
 G5 & met: illegal writes rejected by the database itself, zero orphans by the same declarative keys & FK error 1452, UNIQUE 1062, CHECK 3819 demonstrated in Experiment~3 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{Limitations}
-Four boundaries should be read alongside these results. First, the dataset is synthetic: the distributional agreement with the RideAustin holdout (Section~\ref{sec:eval}) reflects the generator's calibration rules rather than real-world fit, so we report similarity and make no causal claims; the 15-zone pickup distribution in particular is a declared course setting without a calibration source. Second, by decision D-05 a trip enters the database only when dispatch succeeds, so unmatched requests are structurally invisible: order volume, dispatch success rate and matching latency cannot be analysed in this schema. Third, all performance figures are single-run magnitudes on one laptop-scale MySQL instance at 60{,}000 rows; they are order-of-magnitude evidence, not measured percentiles, and do not extrapolate to production scale or hardware---on this single instance the read-replica tier of the consistency design (Section~\ref{subsec:goals}) remains a declared stance rather than a deployed component. Fourth, the sample is thin in its tails: with 150 drivers and $\approx$180 LUXURY trips, per-tier and per-driver aggregates are illustrative rather than statistically significant.
+Four boundaries should be read alongside these results. First, the dataset is synthetic: agreement with the RideAustin holdout (Section~\ref{sec:eval}) reflects the generator's calibration rules, not real-world fit, so we report similarity and make no causal claims; the 15-zone pickup distribution is a declared course setting. Second, by decision D-05 unmatched requests never enter the database, so order volume, dispatch success rate and matching latency cannot be analysed in this schema. Third, all performance figures are single-run magnitudes on one laptop-scale MySQL instance at 60{,}000 rows --- order-of-magnitude evidence, not measured percentiles --- and the read-replica tier (Section~\ref{subsec:goals}) remains a declared stance rather than a deployed component. Fourth, the sample is thin in its tails: with 150 drivers and $\approx$180 LUXURY trips, per-tier and per-driver aggregates are illustrative rather than statistically significant.
 
 \subsection{Future Work}
-Three extensions follow naturally. Partitioning \texttt{Trip} by \texttt{start\_time} would turn the 180-day retention window into a drop-partition archival job instead of row-by-row deletes, and pairs well with the composite index of Experiment~1---at a real cost: MySQL 8.0 allows no foreign keys on partitioned InnoDB tables, and \texttt{Trip} sits on both sides (its own FKs, plus \texttt{Payment} and \texttt{trip\_detail} referencing it), so the gain would be paid for in declarative referential integrity, re-established in the application layer. Deploying the declared read replica would route the wide aggregate reads (reconciliation reports, monthly revenue, the dispatch dashboard) away from the write-heavy primary. Finally, a pre-insert matching-event table (request, driver offer, dispatch outcome) would close the D-05 scope gap and bring dispatch analytics within reach of the same five-entity core; re-modelling that event stream against a document store (NoSQL comparison) would be the natural next experiment.
+Three extensions follow naturally. Partitioning \texttt{Trip} by \texttt{start\_time} would turn the 180-day retention window into a drop-partition archival job instead of row-by-row deletes, at a real cost: MySQL~8.0 allows no foreign keys on partitioned InnoDB tables, and \texttt{Trip} both carries foreign keys and is referenced by \texttt{Payment} and \texttt{trip\_detail}, so the gain trades declarative integrity for application-layer enforcement. Deploying the declared read replica would route the wide aggregate reads away from the write-heavy primary. Finally, a pre-insert matching-event table (request, driver offer, dispatch outcome) would close the D-05 scope gap; re-modelling that event stream against a document store would be the natural next experiment.
 
 % TODO(E): 润色合并后走 11-08 全员确认冻结；G1–G5 数字与 §5 定稿逐一对账无错引（A 2026-11-06 复核）

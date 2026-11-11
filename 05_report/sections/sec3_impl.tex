@@ -26,7 +26,7 @@ machine, script and statement that produced it.
 
 \subsection{DDL Organisation and Key Constraints}
 \label{sec:ddl}
-\texttt{build.sql} is organised in four blocks: (0)~drop/recreate the schema; (1)~the official
+\texttt{build.sql} is organised in five blocks: (0)~drop/recreate the schema; (1)~the official
 five-table DDL of Topic~5, kept unmodified in the repository (``base immutability rule'');
 (2)~the official seed queries; (3)~the extension zone; (4)~a self-check block printing the server
 version, the table list and per-table counts, turning every rebuild into a verifiable event.
@@ -95,19 +95,11 @@ Q1 row (trip~1, Justin Lewis, fare 8.33, cash), exactly 150 drivers with complet
 (Q2), and the four-tier aggregate of q10. Every check passed with observed values identical to
 expected. Evidence is captured per the screenshot specification: 21 verification screenshots
 (2026-11-01) --- structure and row count for each of the eight tables, the row-count summary
-(Fig.~\ref{fig:rowcounts}), and four query spot-checks --- plus the ten query-result screenshots
-referenced in Section~\ref{sec:sql}. The procedure simultaneously closes goal G1
-(60{,}000 trips $\geq$ 50{,}000) and demonstrates goal G5 (constraint enforcement; error-code
-demonstrations appear with the experiments in Section~\ref{sec:eval}).
+(Fig.~\ref{fig:rowcounts}, Appendix~\ref{app:screens}), and four query spot-checks --- plus the ten
+query-result screenshots referenced in Section~\ref{sec:sql}. The procedure simultaneously closes
+goal G1 (60{,}000 trips $\geq$ 50{,}000) and demonstrates goal G5 (constraint enforcement;
+error-code demonstrations appear with the experiments in Section~\ref{sec:eval}).
 
-\begin{figure}[ht]
-\centering
-\begin{minipage}{0.48\textwidth}\centering
-\includegraphics[width=\linewidth]{row_counts_1101.png}
-\caption{Eight-table row-count self-check.}\label{fig:rowcounts}
-\end{minipage}\hfill
-\begin{minipage}{0.48\textwidth}\centering
-\includegraphics[width=\linewidth]{ddl_trip_detail_1101_a.png}
-\caption{\texttt{trip\_detail} DDL: PK-as-FK, three FKs, rating CHECK.}\label{fig:tripdetail}
-\end{minipage}
-\end{figure}
+% 2026-11-11 E 代改（C 截稿前未响应，同 §4 截图→附录 C 处方，git 可回退）：
+%   两张验证截图对移入附录 C 全宽呈现，正文保表格与指针——正文 13→目标 ≤12 页
+

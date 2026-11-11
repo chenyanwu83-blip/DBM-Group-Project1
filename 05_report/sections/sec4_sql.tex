@@ -7,26 +7,17 @@
 % 2026-11-11 E 二次瘦身（组长意见1/14）：截图对 Q3/Q4、Q5/Q6、Q7/Q8
 %   全宽移入附录 C（更大更可读，不计页数）；正文留 Q1/Q2（对账核心）
 %   与 Q9/Q10（扩展表验证）两对。
+% 2026-11-11 E 终编三收：Q1/Q2、Q9/Q10 两对亦移附录 C——正文 §4 纯文字+指针，
+%   十张截图统一全宽收附录 C（A 砍 §1 与 D 补证据相抵，正文仍 14 页，此杆 −0.9）
 \section{SQL Queries and Conceptual Q\&A}
 \label{sec:sql}
 
 \subsection{Business Queries}
 
-Ten queries answer the workload, all executed on the 60{,}000-trip sample. Each statement is shown below or in Appendix~\ref{app:queries} exactly as executed in Workbench, alongside its result set; the remaining result screenshots are collected at full width in Appendix~\ref{app:screens}.
+Ten queries answer the workload, all executed on the 60{,}000-trip sample. All ten statements are shown exactly as executed in MySQL Workbench, together with their result sets, in Appendix~\ref{app:screens}; the exact SQL text, verbatim from \texttt{02\_sql/queries/}, is collected in Appendix~\ref{app:queries}.
 
 \paragraph{Q1--Q2: Payment reconciliation and collections.}
-Q1 pairs every completed trip with its payment via the UNIQUE \texttt{trip\_id} join --- \texttt{fare} equals \texttt{amount} row by row. Card is the dominant payment method. Q2 flips the join into a \texttt{NOT EXISTS} anti-join to find drivers with uncollected fares: 150 drivers, 1{,}442 trips. Cancelled trips carrying the \$1.50 fee already have a Payment row, so they stay off the list.
-
-\begin{figure}[ht]\centering
-\begin{minipage}[t]{0.485\textwidth}\centering
-\includegraphics[width=\linewidth]{q01_completed_payment_1029.png}\\[2pt]
-{\small (a) Q1 (first 1{,}000 of $\approx$49.2k rows).}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.485\textwidth}\centering
-\includegraphics[width=\linewidth]{q02_unpaid_drivers_1029.png}\\[2pt]
-{\small (b) Q2: 150 drivers, 1{,}442 unpaid trips.}
-\end{minipage}
-\end{figure}
+Q1 pairs every completed trip with its payment via the UNIQUE \texttt{trip\_id} join --- \texttt{fare} equals \texttt{amount} row by row. Card is the dominant payment method. Q2 flips the join into a \texttt{NOT EXISTS} anti-join to find drivers with uncollected fares: 150 drivers, 1{,}442 trips. Cancelled trips carrying the \$1.50 fee already have a Payment row, so they stay off the list. (Screenshots: Appendix~\ref{app:screens}.)
 
 \paragraph{Q3--Q4: Revenue by vehicle and by driver-day.}
 Q3 aggregates listed trip fares across \texttt{Vehicle}$\to$\texttt{Driver}$\to$\texttt{Trip} (fare is the sticker price, not cash collected); the distribution is balanced, with head vehicles at 440--460 trips versus a fleet average of 400. Q4 groups completed trips by driver and day, then ranks by total fare --- the top driver-day totals \$158.92. Note that SUM(fare) measures listed prices rather than driver take-home pay. (Screenshots: Appendix~\ref{app:screens}.)
@@ -38,18 +29,7 @@ Q5 finds completed-but-unpaid trips where more than 24 hours have passed since \
 Q7 joins recorded payment amounts to trip dispatch months (grouped by when the trip was accepted, not when payment was recorded): the total rises from \$49.3k to \$54.8k over twelve months, a property of the generated sample rather than evidence of real growth. Q8 keeps passengers active on two or more distinct days --- the heaviest rides 79 trips across 74 days. (Screenshots: Appendix~\ref{app:screens}.)
 
 \paragraph{Q9--Q10: Spatial and product-line views from the extension tables.}
-Q9 joins through \texttt{trip\_detail} to \texttt{pickup\_zone}: the top three zones absorb 34.6\% of accepted trips (Downtown 16.9\%, West Campus 9.4\%, South Congress 8.2\%), matching the course-assumed zone distribution. This counts accepted trips only --- requests without a driver are outside the data. Q10 joins to \texttt{service\_tier} and uses \texttt{COUNT(rating)} for coverage (NULL-skipping) and \texttt{AVG(rating)} for the mean: fares climb 3$\times$ across tiers while ratings stay flat at 4.85 --- a statistic of the generated sample, not evidence that premium products monetize without hurting satisfaction.
-
-\begin{figure}[ht]\centering
-\begin{minipage}[t]{0.485\textwidth}\centering
-\includegraphics[width=\linewidth]{q09_hot_zones_1029.png}\\[2pt]
-{\small (a) Q9: 15 zones.}
-\end{minipage}\hfill
-\begin{minipage}[t]{0.485\textwidth}\centering
-\includegraphics[width=\linewidth]{q10_service_tier_rating_1029.png}\\[2pt]
-{\small (b) Q10: four tiers.}
-\end{minipage}
-\end{figure}
+Q9 joins through \texttt{trip\_detail} to \texttt{pickup\_zone}: the top three zones absorb 34.6\% of accepted trips (Downtown 16.9\%, West Campus 9.4\%, South Congress 8.2\%), matching the course-assumed zone distribution. This counts accepted trips only --- requests without a driver are outside the data. Q10 joins to \texttt{service\_tier} and uses \texttt{COUNT(rating)} for coverage (NULL-skipping) and \texttt{AVG(rating)} for the mean: fares climb 3$\times$ across tiers while ratings stay flat at 4.85 --- a statistic of the generated sample, not evidence that premium products monetize without hurting satisfaction. (Screenshots: Appendix~\ref{app:screens}.)
 
 \subsection{Conceptual Q\&A}
 

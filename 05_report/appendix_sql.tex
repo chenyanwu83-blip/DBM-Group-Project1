@@ -54,16 +54,16 @@ GROUP BY v.vehicle_id, v.plate
 ORDER BY total_fare DESC;
 \end{lstlisting}
 
+% 2026-11-11 E 终编同步：Q4 已换 GROUP BY 兼容版（D 31e47f6），B.2 快照随
+%   02_sql/queries/q04_driver_daily_income.sql 逐字更新（纪律 D-08）
 \begin{lstlisting}[caption={Q4: driver daily income ranking.}]
-SELECT driver_id, income_date, day_income,
-       RANK() OVER (ORDER BY day_income DESC) AS rnk
-FROM (SELECT driver_id,
-              DATE(start_time) AS income_date,
-              ROUND(SUM(fare), 2) AS day_income
-       FROM Trip
-       WHERE status = 'completed'
-       GROUP BY driver_id, DATE(start_time)) AS daily
-ORDER BY rnk
+SELECT driver_id,
+       DATE(start_time) AS income_date,
+       ROUND(SUM(fare), 2) AS total_fare
+FROM Trip
+WHERE status = 'completed'
+GROUP BY driver_id, DATE(start_time)
+ORDER BY total_fare DESC
 LIMIT 10;
 \end{lstlisting}
 

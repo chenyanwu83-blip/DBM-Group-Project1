@@ -6,22 +6,15 @@
 % ============================================================
 
 % ---- 标定数据集（A4 v1.1 定稿；报告 §1.4 数据来源声明必引）----
-@misc{rideaustin-data,
-  author       = {Zuniga-Garcia, Natalia and Ruiz Juri, Natalia and Machemehl, Randy and Scott, James and Tec, Mauricio},
-  title        = {Evaluation of Ride-Sourcing Search Frictions and Driver Productivity: A Spatial Denoising Approach},
-  year         = {2019},
-  howpublished = {RideAustin rides dataset, Mendeley Data, V1},
-  doi          = {10.17632/wp5gkjbvb9.1},
-  note         = {Approx. 1.49M ride-sourcing trips, 2016-06-02 -- 2017-04-13. License CC0 1.0. Distributional calibration source for our synthetic generator (decision D-10): tier mix, per-trip ratings (92.6\% non-null), fare rates. Verified 2026-10-22}
-}
-
+% 2026-11-11 E 合并：rideaustin-data(@misc) 与 zuniga2020rideaustin(@article) 为同一论文的
+%   重复条目——数据集信息并入论文条目 note，删除 @misc 版（正文引用键已同步，§1 A 知悉）
 @article{zuniga2020rideaustin,
   author  = {Zuniga-Garcia, Natalia and Ruiz Juri, Natalia and Machemehl, Randy and Scott, James and Tec, Mauricio},
-  title   = {Evaluation of Ride-Sourcing Search Frictions and Driver Productivity: A Spatial Denoising Approach},
+  title   = {Evaluation of Ride-sourcing Search Frictions and Driver Productivity: A Spatial Denoising Approach},
   journal = {Transportation Research Part C: Emerging Technologies},
   year    = {2019},
   doi     = {10.1016/j.trc.2019.11.021},
-  note    = {Accessed 2026-10-22}
+  note    = {RideAustin rides dataset (Mendeley Data, doi 10.17632/wp5gkjbvb9.1): approx.\ 1.49M trips, 2016-06-02 -- 2017-04-13, CC0 1.0; calibration source for the synthetic generator (decision D-10). Accessed 2026-10-22}
 }
 
 
@@ -46,7 +39,7 @@
   title        = {TLC Trip Record Data},
   year         = {2026},
   howpublished = {\url{https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page}},
-  note         = {Accessed 2026-10-22. High Volume FHV monthly records and taxi-zone lookup table, used only as a distributional reference for our synthetic generator (decision D-10); the page carries no data-specific open license, and NYC.gov Terms of Use apply}
+  note         = {Accessed 2026-10-22. Distributional reference only (decision D-10); NYC.gov Terms of Use apply}
 }
 
 @misc{nycterms,
@@ -62,7 +55,7 @@
   title        = {Am I Charged for Cancelling a Trip? (Uber Help)},
   year         = {2026},
   howpublished = {\url{https://help.uber.com/en/riders/article/am-i-charged-for-cancelling-a-trip-?nodeId=5f6415dc-dfdb-4d64-927a-66bb06bc4f82}},
-  note         = {Accessed 2026-10-22. First-party wording on cancellation-fee trigger and purpose; the real grace period and fee vary by city --- our course simplification is a flat USD 1.50 fee (decision D-06 v1.2; an early CNY 8 draft value was superseded by the group's 10-23 currency vote)}
+  note         = {Accessed 2026-10-22. Real grace period and fee vary by city; our course simplification is a flat USD 1.50 fee (decision D-06)}
 }
 
 % ---- A 追加 2026-11-02（§1.1/§1.3 引用；A1 来源 2）。TODO(A/E)：M4 前复核一次链接可达性 ----
@@ -71,7 +64,7 @@
   title        = {Why Uber Engineering Switched from Postgres to MySQL},
   year         = {2016},
   howpublished = {Uber Engineering Blog, \url{https://eng.uber.com/postgres-to-mysql-migration/}},
-  note         = {Recorded as source 2 of the A1 business-flow memo (2026-10-22); core-transaction store practice cited in \S1: every charge must be a durable transactional record}
+  note         = {Source 2 of the A1 business-flow memo (2026-10-22); durable-transaction record practice cited in Section 1}
 }
 
 % TODO(胡中远): 教材条目模板（确认书名/作者/版次后启用并在 §4 问答引用）

@@ -139,4 +139,6 @@ Evening peak 17--20h share & $\approx$20.5\,\% & 22.4\,\% \\
 Percentage dimensions deviate by at most two percentage points; mean fare differs by one cent. What this checks is that several marginal statistics are close --- it does not validate the full joint distribution, long tails, or business-level external validity. Status mix, payment methods and the unpaid rate follow course-defined rules with no source counterpart.
 
 \subsection{Results Summary and Goal Recheck}
-The composite index reduced a full scan to a covering range scan (16.6\,ms $\to$ 0.46\,ms, $\approx$36$\times$) --- a single-run measurement, not a P95 verification. The three anti-join formulations produced identical results and plans; query-form agreement, not independent zero-missed verification. The lost-update experiment showed the read-modify-write hazard and its \texttt{FOR UPDATE} fix; the error codes 1452/1062/3819 confirmed schema-level constraint interception. Together these results partially address the measurable goals of Section~\ref{sec:context}; G2 and G3 remain unverified at the workload level.
+% 2026-11-11 E 依组长意见1（删重复解释）压缩：本段与 §6.1 目标复核表逐句重复，
+%   改为一句指针；各实验的口径限定语已随各小节就地声明（5.2/5.3）
+Together these results partially address the measurable goals of Section~\ref{sec:context}; the goal-by-goal verdict, each at its declared verification scope, is Table~\ref{tab:goalcheck} in Section~\ref{sec:conclusion}.

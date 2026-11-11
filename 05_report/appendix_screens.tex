@@ -1,14 +1,26 @@
 % ============================================================
 % 附录 C 查询结果截图 — D 供图、E 排版（附录不计 10–12 页正文口径，2026-11-11 老师确认）
 % 2026-11-11 E 依组长意见1/14 设立：正文压页，截图全宽收此处——
-%   2560×1550 Retina 原图，\textwidth 下约 400 DPI，比正文半宽对更大更可读；
-%   正文 §4 保留 Q1/Q2（对账核心）与 Q9/Q10（扩展表验证）两对，其余六张在此。
+%   2560×1550 Retina 原图，\textwidth 下约 400 DPI，比正文半宽对更大更可读。
+% 2026-11-11 E 终编：Q1/Q2、Q9/Q10 两对亦从 §4 移入——十张截图全宽统一收此处，
+%   §4 正文纯文字+指针（A 砍 §1 与 D 补证据相抵，正文仍 14 页，此杆 −0.9）。
+%   Q4 为 GROUP BY 兼容版新图（D 1111 重拍，top=$158.92）。
 % 纪律：截图源文件在 03_data/screenshots/（D 维护）；D 换图只改文件名不改结构
 % ============================================================
-\section{Query Result Screenshots}
+\section{Execution and Result Screenshots}
 \label{app:screens}
 
-Result screenshots of Section~\ref{sec:sql} at full width: Q3--Q8 as executed in MySQL Workbench on the 60{,}000-trip sample (Q1/Q2 and Q9/Q10 appear inline in Section~\ref{sec:sql}). Each window shows the statement above and its result grid below.
+Screenshots at full width, as executed in MySQL Workbench on the 60{,}000-trip sample. First the ten business queries of Section~\ref{sec:sql}, each window showing the statement above and its result grid below; then the two build-verification screenshots of Section~\ref{sec:impl} (row-count self-check and the \texttt{trip\_detail} DDL).
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{q01_completed_payment_1029.png}
+\caption{Q1: completed trips with payment (first 1{,}000 of $\approx$49.2k rows).}
+\end{figure}
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{q02_unpaid_drivers_1029.png}
+\caption{Q2: completed but unpaid drivers --- 150 drivers, 1{,}442 unpaid trips.}
+\end{figure}
 
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{q03_vehicle_revenue_1029.png}
@@ -17,12 +29,12 @@ Result screenshots of Section~\ref{sec:sql} at full width: Q3--Q8 as executed in
 
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{q04_driver_income_1111.png}
-\caption{Q4: driver daily income ranking, top-10 driver-days.}
+\caption{Q4: driver daily income ranking (GROUP BY formulation), top-10 driver-days.}
 \end{figure}
 
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{q05_unpaid_over_24h_1029.png}
-\caption{Q5: completed and unpaid beyond 24 hours (first 1{,}000 of 1{,}442 rows).}
+\caption{Q5: completed and unpaid beyond 24 hours since dispatch acceptance (first 1{,}000 of 1{,}442 rows).}
 \end{figure}
 
 \begin{figure}[ht]\centering
@@ -32,10 +44,31 @@ Result screenshots of Section~\ref{sec:sql} at full width: Q3--Q8 as executed in
 
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{q07_monthly_revenue_1029.png}
-\caption{Q7: monthly revenue over twelve months.}
+\caption{Q7: recorded payment amounts by trip dispatch month, twelve months.}
 \end{figure}
 
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{q08_repeat_passengers_1029.png}
 \caption{Q8: repeat passengers (first 1{,}000 rows).}
+\end{figure}
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{q09_hot_zones_1029.png}
+\caption{Q9: accepted trips per pickup zone, 15 zones.}
+\end{figure}
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{q10_service_tier_rating_1029.png}
+\caption{Q10: service tier versus rating, four tiers.}
+\end{figure}
+
+% 2026-11-11 E 代改：§3 两张验证截图移入（C 截稿前未响应，同 §4 处方，git 可回退）
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{row_counts_1101.png}
+\caption{Eight-table row-count self-check (Section~\ref{sec:impl} acceptance run).}\label{fig:rowcounts}
+\end{figure}
+
+\begin{figure}[ht]\centering
+\includegraphics[width=\textwidth]{ddl_trip_detail_1101_a.png}
+\caption{\texttt{trip\_detail} DDL: PK-as-FK, three FKs, rating CHECK.}\label{fig:tripdetail}
 \end{figure}
