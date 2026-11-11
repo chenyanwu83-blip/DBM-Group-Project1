@@ -29,7 +29,7 @@ Q1 pairs every completed trip with its payment via the UNIQUE \texttt{trip\_id} 
 \end{figure}
 
 \paragraph{Q3--Q4: Revenue by vehicle and by driver-day.}
-Q3 aggregates listed trip fares across \texttt{Vehicle}$\to$\texttt{Driver}$\to$\texttt{Trip} (fare is the sticker price, not cash collected); the distribution is balanced, with head vehicles at 440--460 trips versus a fleet average of 400. Q4 groups completed trips by driver and day, then ranks by total fare --- the top driver-day totals \$292. Note that SUM(fare) measures listed prices rather than driver take-home pay. (Screenshots: Appendix~\ref{app:screens}.)
+Q3 aggregates listed trip fares across \texttt{Vehicle}$\to$\texttt{Driver}$\to$\texttt{Trip} (fare is the sticker price, not cash collected); the distribution is balanced, with head vehicles at 440--460 trips versus a fleet average of 400. Q4 groups completed trips by driver and day, then ranks by total fare --- the top driver-day totals \$158.92. Note that SUM(fare) measures listed prices rather than driver take-home pay. (Screenshots: Appendix~\ref{app:screens}.)
 
 \paragraph{Q5--Q6: Collections exposure and dispatch planning.}
 Q5 finds completed-but-unpaid trips where more than 24 hours have passed since \emph{dispatch acceptance} (\texttt{start\_time}), not since completion or payment due date --- the model lacks those fields, so dispatch time is a rough proxy. All 1{,}442 qualify because the simulated history ends before load time. Q6 groups trips by hour and keeps hours above 2{,}000 trips with \texttt{HAVING}, something \texttt{WHERE} cannot do; the evening block 17:00--20:00 carries 22.4\% of volume in the generated sample. (Screenshots: Appendix~\ref{app:screens}.)
