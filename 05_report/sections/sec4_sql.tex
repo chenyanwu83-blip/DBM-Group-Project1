@@ -29,16 +29,16 @@ Q1 pairs every completed trip with its payment via the UNIQUE \texttt{trip\_id} 
 \end{figure}
 
 \paragraph{Q3--Q4: Revenue by vehicle and by driver-day.}
-Q3 aggregates across \texttt{Vehicle}$\to$\texttt{Driver}$\to$\texttt{Trip}; revenue is balanced (head vehicles 440--460 trips vs.\ fleet average 400). Q4 ranks driver-days with \texttt{RANK() OVER} on the aggregated daily income --- one pass, no self-join. The top earner makes \$292 in a single day. (Screenshots: Appendix~\ref{app:screens}.)
+Q3 aggregates listed trip fares across \texttt{Vehicle}$\to$\texttt{Driver}$\to$\texttt{Trip} (fare is the sticker price, not cash collected); the distribution is balanced, with head vehicles at 440--460 trips versus a fleet average of 400. Q4 groups completed trips by driver and day, then ranks by total fare --- the top driver-day totals \$292. Note that SUM(fare) measures listed prices rather than driver take-home pay. (Screenshots: Appendix~\ref{app:screens}.)
 
 \paragraph{Q5--Q6: Collections exposure and dispatch planning.}
-Q5 filters unpaid completed trips beyond 24 hours --- all 1{,}442 qualify because the simulated history ends before load time; the threshold would isolate overdue receivables in production. Q6 groups trips by hour and keeps hours above 2{,}000 trips with \texttt{HAVING}, something \texttt{WHERE} cannot do. The evening block 17:00--20:00 carries 22.4\% of volume, peaking at hour 18. (Screenshots: Appendix~\ref{app:screens}.)
+Q5 finds completed-but-unpaid trips where more than 24 hours have passed since \emph{dispatch acceptance} (\texttt{start\_time}), not since completion or payment due date --- the model lacks those fields, so dispatch time is a rough proxy. All 1{,}442 qualify because the simulated history ends before load time. Q6 groups trips by hour and keeps hours above 2{,}000 trips with \texttt{HAVING}, something \texttt{WHERE} cannot do; the evening block 17:00--20:00 carries 22.4\% of volume in the generated sample. (Screenshots: Appendix~\ref{app:screens}.)
 
 \paragraph{Q7--Q8: Trends and retention.}
-Q7 joins payments to trip months: revenue climbs from \$49.3k to \$54.8k over twelve months, about +11\% with no dip. Q8 keeps passengers active on two or more distinct days --- the heaviest rides 79 trips across 74 days. (Screenshots: Appendix~\ref{app:screens}.)
+Q7 joins recorded payment amounts to trip dispatch months (grouped by when the trip was accepted, not when payment was recorded): the total rises from \$49.3k to \$54.8k over twelve months, a property of the generated sample rather than evidence of real growth. Q8 keeps passengers active on two or more distinct days --- the heaviest rides 79 trips across 74 days. (Screenshots: Appendix~\ref{app:screens}.)
 
 \paragraph{Q9--Q10: Spatial and product-line views from the extension tables.}
-Q9 joins through \texttt{trip\_detail} to \texttt{pickup\_zone}: the top three zones absorb 34.6\% of accepted trips (Downtown 16.9\%, West Campus 9.4\%, South Congress 8.2\%). This counts accepted trips only --- requests without a driver are outside the data. Q10 joins to \texttt{service\_tier} and uses \texttt{COUNT(rating)} for coverage (NULL-skipping) and \texttt{AVG(rating)} for the mean: fare climbs 3$\times$ across tiers while ratings stay flat at 4.85.
+Q9 joins through \texttt{trip\_detail} to \texttt{pickup\_zone}: the top three zones absorb 34.6\% of accepted trips (Downtown 16.9\%, West Campus 9.4\%, South Congress 8.2\%), matching the course-assumed zone distribution. This counts accepted trips only --- requests without a driver are outside the data. Q10 joins to \texttt{service\_tier} and uses \texttt{COUNT(rating)} for coverage (NULL-skipping) and \texttt{AVG(rating)} for the mean: fares climb 3$\times$ across tiers while ratings stay flat at 4.85 --- a statistic of the generated sample, not evidence that premium products monetize without hurting satisfaction.
 
 \begin{figure}[ht]\centering
 \begin{minipage}[t]{0.485\textwidth}\centering
@@ -57,13 +57,30 @@ Q9 joins through \texttt{trip\_detail} to \texttt{pickup\_zone}: the top three z
 A primary key is NOT NULL and UNIQUE and acts as the address of a row (\texttt{Passenger.psg\_id}). A foreign key is a child-table column whose values must exist in the parent key (\texttt{Trip.psg\_id}). MySQL rejects \texttt{Trip(psg\_id=99999)} with error 1452 if the passenger does not exist, and blocks deleting a still-referenced parent under RESTRICT (or CASCADE / SET NULL if declared). In our schema \texttt{Payment.trip\_id} is NOT NULL, UNIQUE and a foreign key at once, so a payment always attaches to exactly one real trip --- the 1:1 implementation itself.
 
 \paragraph{Q2: 1NF, 2NF and 3NF.}
-1NF: each cell holds one atomic value. 2NF: no non-key attribute depends on only part of a composite key --- ours use single-column surrogate keys, so 2NF holds by construction. 3NF: no transitive dependencies. If we stored the plate in \texttt{Driver(driver\_id, name, vehicle\_id, plate)}, plate would depend on vehicle\_id, which depends on the key. That chain causes update, deletion and insertion anomalies. Splitting into \texttt{Driver} and \texttt{Vehicle} breaks it, which is the structure we adopted.
+1NF: each cell holds one atomic value. 2NF: no non-key attribute depends on only part of a composite key --- ours use single-column surrogate keys, so 2NF holds by construction. 3NF: no transitive dependencies. If we stored the passenger name directly in \texttt{Trip(trip\_id, psg\_id, psg\_name)}, then psg\_name would depend on psg\_id, which depends on the key --- a transitive chain. A passenger with many trips would have the name repeated across rows; renaming requires touching every one, and deleting the last trip of a passenger would lose the name entirely. Keeping names in \texttt{Passenger} and referencing by \texttt{psg\_id} avoids this, which is how our schema is structured.
 
 \paragraph{Q3: INNER, LEFT and RIGHT JOIN.}
 INNER JOIN keeps only matching rows; LEFT JOIN keeps every left-table row, filling unmatched right columns with NULL. LEFT JOIN is mandatory when zero-trip drivers must appear in a per-driver report --- INNER JOIN would drop them silently. The status filter goes in the ON clause (in WHERE it degenerates the join back to INNER), and the count uses \texttt{COUNT(t.trip\_id)} instead of \texttt{COUNT(*)} so unmatched drivers read 0, not 1.
 
 \paragraph{Q4: Subquery vs.\ JOIN.}
-The same question ``who rode vehicle 3'' can be written with a JOIN plus DISTINCT, with \texttt{psg\_id IN (SELECT ...)}, or with EXISTS. In principle the JOIN should win because the optimizer uses join-column indexes in one plan. In practice MySQL 8 rewrites most IN and EXISTS forms into semi-joins, so the plans come out identical. Our Experiment 2 confirms this: all three anti-join variants return 1{,}442 rows with the same plan, within 8 ms. NOT IN is unsafe if the subquery column can be NULL --- \texttt{Payment.trip\_id} is NOT NULL, so it works here.
+``Who rode a PREMIUM vehicle?'' With a JOIN:
+\begin{lstlisting}[language=SQL]
+SELECT DISTINCT p.psg_id, p.name
+FROM Passenger p
+  JOIN Trip t ON t.psg_id = p.psg_id
+  JOIN trip_detail td ON td.trip_id = t.trip_id
+  JOIN service_tier st ON st.tier_id = td.service_tier_id
+WHERE st.name = 'PREMIUM';
+\end{lstlisting}
+With a subquery:
+\begin{lstlisting}[language=SQL]
+SELECT psg_id, name FROM Passenger
+WHERE psg_id IN (SELECT t.psg_id FROM Trip t
+    JOIN trip_detail td ON td.trip_id = t.trip_id
+    JOIN service_tier st ON st.tier_id = td.service_tier_id
+    WHERE st.name = 'PREMIUM');
+\end{lstlisting}
+The JOIN should be faster in principle because the optimizer uses join-column indexes in one plan. In practice MySQL 8 rewrites most IN and EXISTS forms into semi-joins, so the plans come out identical --- our Experiment~2 (Section~\ref{sec:eval}) found all three anti-join variants within 8 ms. NOT IN is unsafe when the subquery column can be NULL; \texttt{Payment.trip\_id} is NOT NULL.
 
 \paragraph{Q5: ACID and concurrent payments.}
 Atomicity, consistency, isolation and durability guarantee that transactions either fully succeed or leave no trace, and that committed state satisfies all constraints. With a hypothetical wallet at 100 and two concurrent \$50 deductions, both transactions read 100 and write 50 --- the classic lost update. This happens because the application reads before updating across two sessions; a single atomic \texttt{UPDATE balance = balance - 50} would not lose anything. The default REPEATABLE READ does not prevent it either, since plain SELECTs are non-locking. The fix is two-layered: \texttt{FOR UPDATE} serializes the read-modify-write, while the UNIQUE on \texttt{Payment.trip\_id} blocks double payments at the schema level.
