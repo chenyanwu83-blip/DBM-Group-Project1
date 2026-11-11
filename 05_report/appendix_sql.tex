@@ -21,7 +21,7 @@ mysql -u <user> -p < 02_sql/data_import.sql   # load the generated 60,000-trip s
 
 \subsection{Query Listings}
 \label{app:queries}
-The ten business queries of Section~\ref{sec:sql}, verbatim from \texttt{02\_sql/queries/}. The paired Workbench screenshots in Section~\ref{sec:sql} show each statement as executed, together with its result set.
+The ten business queries of Section~\ref{sec:sql}, verbatim from \texttt{02\_sql/queries/}. The paired Workbench screenshots in Appendix~\ref{app:screens} show each statement as executed, together with its result set.
 
 \begin{lstlisting}[caption={Q1: completed trips with payment.}]
 SELECT t.trip_id, t.psg_id, t.driver_id, t.fare,
@@ -131,4 +131,27 @@ FROM Trip t
 WHERE t.status = 'completed'
 GROUP BY st.tier_id, st.name
 ORDER BY completed_trips DESC;
+\end{lstlisting}
+
+% 2026-11-11 E 新增：§5 实验 SQL 清单移此（正文压页），label 供 §5.2/5.3 指针引用
+\subsection{Experiment Statements}
+\label{app:expsql}
+The statements of the two performance experiments in Section~\ref{sec:eval}, verbatim from \texttt{02\_sql/exp\_index.sql} and \texttt{02\_sql/exp\_concurrency.sql}.
+
+\begin{lstlisting}[caption={Experiment 1: index target query and composite index creation.}]
+SELECT COUNT(*) FROM Trip
+WHERE status = 'completed' AND start_time >= '2026-10-01';
+CREATE INDEX idx_trip_status_time ON Trip (status, start_time);
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Experiment 2: three anti-join formulations of the same count.}]
+-- NOT EXISTS
+SELECT COUNT(*) FROM Trip t WHERE t.status = 'completed'
+  AND NOT EXISTS (SELECT 1 FROM Payment p WHERE p.trip_id = t.trip_id);
+-- NOT IN
+SELECT COUNT(*) FROM Trip t WHERE t.status = 'completed'
+  AND t.trip_id NOT IN (SELECT trip_id FROM Payment);
+-- LEFT JOIN ... IS NULL
+SELECT COUNT(*) FROM Trip t LEFT JOIN Payment p ON p.trip_id = t.trip_id
+  WHERE t.status = 'completed' AND p.pay_id IS NULL;
 \end{lstlisting}

@@ -10,11 +10,11 @@
 \section{Execution and Result Screenshots}
 \label{app:screens}
 
-Screenshots at full width, as executed in MySQL Workbench on the 60{,}000-trip sample. First the ten business queries of Section~\ref{sec:sql}, each window showing the statement above and its result grid below; then the two build-verification screenshots of Section~\ref{sec:impl} (row-count self-check and the \texttt{trip\_detail} DDL).
+Screenshots at full width, as executed in MySQL Workbench on the 60{,}000-trip sample. First the ten business queries of Section~\ref{sec:sql}, each window showing the statement above and its result grid below; then the two build-verification screenshots of Section~\ref{sec:impl} (row-count self-check and the \texttt{trip\_detail} DDL) and the Experiment~1 before/after pair of Section~\ref{sec:eval}.
 
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{q01_completed_payment_1029.png}
-\caption{Q1: completed trips with payment (first 1{,}000 of $\approx$49.2k rows).}
+\caption{Q1: completed trips with payment (first 1{,}000 of 47{,}758 rows).}
 \end{figure}
 
 \begin{figure}[ht]\centering
@@ -39,12 +39,12 @@ Screenshots at full width, as executed in MySQL Workbench on the 60{,}000-trip s
 
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{q06_peak_hours_1029.png}
-\caption{Q6: peak-hour volume, 14 hours above the 2{,}000-trip threshold.}
+\caption{Q6: peak-hour volume, 16 hours above the 2{,}000-trip threshold.}
 \end{figure}
 
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{q07_monthly_revenue_1029.png}
-\caption{Q7: recorded payment amounts by trip dispatch month, twelve months.}
+\caption{Q7: recorded payment amounts by trip dispatch month, thirteen calendar months (two partial).}
 \end{figure}
 
 \begin{figure}[ht]\centering
@@ -71,6 +71,17 @@ Screenshots at full width, as executed in MySQL Workbench on the 60{,}000-trip s
 \begin{figure}[ht]\centering
 \includegraphics[width=\textwidth]{ddl_trip_detail_1101_a.png}
 \caption{\texttt{trip\_detail} DDL: PK-as-FK, three FKs, rating CHECK.}\label{fig:tripdetail}
+\end{figure}
+
+% 2026-11-11 E：实验①前后截图对随全部截图收附录（正文 §5.2 留 Table~\ref{tab:exp1}）
+\begin{figure}[ht]\centering
+\begin{minipage}{0.49\textwidth}\centering
+\includegraphics[width=\textwidth]{exp_index_before_1104.png}
+\end{minipage}\hfill
+\begin{minipage}{0.49\textwidth}\centering
+\includegraphics[width=\textwidth]{exp_index_after_1104.png}
+\end{minipage}
+\caption{Experiment 1 before/after (Section~\ref{sec:eval}): \texttt{type} ALL $\to$ range, \texttt{rows} 60{,}261 $\to$ 3{,}259.}\label{fig:exp1}
 \end{figure}
 
 % A: concise business workflow, separate appendix page for legibility.

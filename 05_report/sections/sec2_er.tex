@@ -4,14 +4,10 @@
 \label{sec:er}
 
 \subsection{ER Diagram and Notation}
-Figure~\ref{fig:er-final} shows the eight tables in our model. The five tables supplied in the Topic~5 handout remain unchanged. We added \texttt{trip\_detail}, \texttt{service\_tier} and \texttt{pickup\_zone} for the two group-approved extension questions. The diagram follows the handout's notation: primary keys are italic, foreign keys have an asterisk, and each link has a cardinality label~\cite{cds534requirement}. Blue boxes show the five base tables; green boxes show the extensions.
-
-\begin{figure}[tbp]
-  \centering
-  \includegraphics[width=\textwidth]{er_final.pdf}
-  \caption{Final eight-table ER diagram (v1.0.1). Blue boxes are the five Topic~5 tables; green boxes are the three extensions. A $1{:}1$ label shows the maximum pairing, while the text explains when a record may be absent.}
-  \label{fig:er-final}
-\end{figure}
+Figure~\ref{fig:er-final} (reproduced full-page in landscape in Appendix~\ref{app:er}) shows the eight tables in our model. The five tables supplied in the Topic~5 handout remain unchanged. We added \texttt{trip\_detail}, \texttt{service\_tier} and \texttt{pickup\_zone} for the two group-approved extension questions. The diagram follows the handout's notation: primary keys are italic, foreign keys have an asterisk, and each link has a cardinality label~\cite{cds534requirement}. Blue boxes show the five base tables; green boxes show the extensions.
+% 2026-11-11 E：ER 图整页横版移附录 C（B 意见：正文内联时实体字段与关系标签
+%   过小难读）。横版 linewidth≈23.6cm 比正文内联 16cm 放大约 1.5 倍；
+%   老师口径附录不计 10–12 页正文，正文页数同时达标。
 
 \subsection{The Five Base Tables}
 Each \texttt{Trip} has one \texttt{Passenger} and one \texttt{Driver}, identified by the required \texttt{psg\_id} and \texttt{driver\_id} foreign keys. A passenger or driver can appear in many trips. Under decision D-05, a Trip is recorded only after a driver accepts a request, so \texttt{start\_time} records acceptance rather than the passenger's request or boarding time.

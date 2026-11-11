@@ -13,16 +13,13 @@ standardised screenshot package (\S\ref{sec:verify}).
 
 \subsection{Environment and Architecture}
 \label{sec:env}
-All five members work on a local MySQL~8 instance under one shared schema, \texttt{ride\_hailing}
+All five members work on separate local MySQL~8 instances holding the same schema, \texttt{ride\_hailing}
 (\texttt{utf8mb4\_general\_ci}); the group compatibility baseline is the lowest registered server
 version (8.0.45), so the scripts avoid CTEs and window functions and treat pre-8.0.16 servers as
 silently ignoring CHECK constraints. GitHub is the single source of truth: a schema change counts
 only when it lands in \texttt{build.sql} (``change the table = change the script = commit''), and
 after every pull members rebuild the database from scratch, keeping the five environments identical
-by construction. Screenshot evidence follows a written specification (naming
-\texttt{prefix\_object\_MMDD.png}; whole-window captures keeping the statement, the result grid and
-the action-output panel in one frame), so every figure in this report traces back to the exact
-machine, script and statement that produced it.
+by construction.
 
 \subsection{DDL Organisation and Key Constraints}
 \label{sec:ddl}
@@ -52,23 +49,23 @@ Trip--TripDetail & \texttt{trip\_id} PK-as-FK & 1:(0..1) \\
 \end{tabular}
 \end{table}
 
-One design rule cannot be expressed in DDL: \texttt{rating} must be non-NULL only for completed
-trips --- a cross-table condition that CHECK cannot reference. It is enforced by the generator and
-documented as a deliberate constraint-expressiveness boundary; trigger-based enforcement was
-considered out of course scope.
+One design rule is not enforced by the table CHECK constraints: \texttt{rating} must be non-NULL only for completed
+trips --- a cross-table condition on \texttt{Trip.status} that a table-level CHECK cannot reference (a trigger
+could express it; trigger-based enforcement was considered out of course scope). The generator and the
+acceptance checks enforce the rule instead.
 
 \subsection{Data Generation and Import}
 \label{sec:data}
-The generator uses the Python standard library only --- no third-party dependencies --- so all five
-machines produce identical output regardless of installed packages. A single seeded RNG
-(\texttt{seed=534}) drives exact-composition pools: each categorical attribute (status, payment
-method, tier mix, rating) is drawn from a pool with exact counts and then shuffled, so proportions
-are exact and only the order is random. Fares follow the group's RideAustin-calibrated formula ---
+SQL generation uses the Python standard library only (the optional \texttt{--load} direct-import path
+additionally requires PyMySQL). A single seeded RNG (\texttt{seed=534}) draws status, service tier
+and pickup zone from exact-count pools, so those proportions are exact and only the order is random;
+payment method, rating presence and star values are probability draws. Fares follow the group's RideAustin-calibrated formula ---
 base + per-minute + per-mile + a fixed \$1.65 surcharge; the REGULAR tier uses a two-period mile
 tariff (0.99/1.50 per mile, 80/20 split) --- and free cancellation (no payment row), charged
 cancellation (\$1.50) and completed-but-unpaid trips are all represented per the fare-calibre
 decision. Determinism was verified by generating the import file twice and comparing checksums: the
-174{,}698-statement \texttt{data\_import.sql} is byte-identical across runs and machines.
+174{,}698-statement \texttt{data\_import.sql} is byte-identical across runs, and a rebuild on a
+second machine reproduced all row counts.
 Table~\ref{tab:rows} lists the resulting row counts.
 
 \begin{table}[ht]

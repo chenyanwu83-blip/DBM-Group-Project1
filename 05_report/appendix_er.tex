@@ -1,0 +1,17 @@
+% ============================================================
+% 附录 C ER 图整页横版 — B 的 ER 终版（04_figures/er_final.pdf）
+% 2026-11-11 E 设立：正文内联时 1750x1060 源图缩到 16cm 宽，最小字号约
+%   3.9pt 难读（B 修改意见）；横版整页 linewidth 约 23.6cm，放大约 1.5 倍。
+%   老师口径附录不计 10–12 页正文，§2.1 以 Figure 引用指到此页。
+% 写法注：sidewaysfigure（rotfloat）独立成页且旋转，lscape+figure[H]/[p]
+%   与 captionof 三种组合实测都会产生空白页，勿改回。
+% ============================================================
+\section{Full-Page ER Diagram}
+\label{app:er}
+
+\begin{sidewaysfigure}
+  \centering
+  \includegraphics[width=0.94\linewidth]{er_final.pdf}
+  \caption{Final eight-table ER diagram (v1.0.1), full page. Blue boxes are the five Topic~5 tables; green boxes are the three extensions. A $1{:}1$ label shows the maximum pairing, while the text explains when a record may be absent.}
+  \label{fig:er-final}
+\end{sidewaysfigure}

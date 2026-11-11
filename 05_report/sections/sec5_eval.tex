@@ -7,12 +7,7 @@
 All experiments ran on a MacBook Air M1 (8\,GB RAM) with MySQL Community Server 26.7.0, on the 60{,}000-trip dataset loaded via the repository's \texttt{build.sql} and \texttt{import\_data.py} (seed 534). Timings are single-run values taken from Workbench's Action Output (query execution time, excluding result-set transfer). No warm-up or repetition was applied; figures should be read as indicative magnitudes rather than stable benchmarks.
 
 \subsection{Experiment 1: Index Before/After}
-Target query and index creation:
-\begin{lstlisting}[language=SQL]
-SELECT COUNT(*) FROM Trip
-WHERE status = 'completed' AND start_time >= '2026-10-01';
-CREATE INDEX idx_trip_status_time ON Trip (status, start_time);
-\end{lstlisting}
+The target query counts completed trips accepted since 2026-10-01; the experiment then creates the composite index \texttt{idx\_trip\_status\_time} on \texttt{Trip(status, start\_time)} --- both statements verbatim in Appendix~\ref{app:expsql}, and the before/after screenshot pair in Appendix~\ref{app:screens} (Figure~\ref{fig:exp1}).
 With no secondary index on those columns the plan is a full table scan (\texttt{type=ALL}, rows $\approx$60{,}261). After the composite index --- equality column first, range column second, leftmost-prefix rule --- the plan switches to a covering index range scan (\texttt{Using index}), no table lookups.
 
 \begin{table}[h]
@@ -30,31 +25,12 @@ after (composite)   & range & \texttt{idx\_trip\_status\_time} & 3{,}259  & 0.46
 \end{tabular}
 \end{table}
 
-\begin{figure}[h]\centering
-\begin{minipage}{0.49\textwidth}\centering
-\includegraphics[width=\textwidth]{exp_index_before_1104.png}
-\end{minipage}\hfill
-\begin{minipage}{0.49\textwidth}\centering
-\includegraphics[width=\textwidth]{exp_index_after_1104.png}
-\end{minipage}
-\caption{Experiment 1 before/after: \texttt{type} ALL $\to$ range, \texttt{rows} 60{,}261 $\to$ 3{,}259.}\label{fig:exp1}
-\end{figure}
-
+% 2026-11-11 E：实验①前后截图对随全部截图移附录 D 全宽呈现（正文保表格与口径）
 Wrapping the indexed column in a function (\texttt{DATE(start\_time) = ...}) degrades access to a sequential index scan; rewriting as a half-open interval restores \texttt{type=range}. This single measurement shows the index eliminates the full scan; it does not constitute a measured P95 across the Top-5 workload queries.
 
 \subsection{Experiment 2: JOIN vs Subquery}
-\begin{lstlisting}[language=SQL]
--- NOT EXISTS
-SELECT COUNT(*) FROM Trip t WHERE t.status = 'completed'
-  AND NOT EXISTS (SELECT 1 FROM Payment p WHERE p.trip_id = t.trip_id);
--- NOT IN
-SELECT COUNT(*) FROM Trip t WHERE t.status = 'completed'
-  AND t.trip_id NOT IN (SELECT trip_id FROM Payment);
--- LEFT JOIN ... IS NULL
-SELECT COUNT(*) FROM Trip t LEFT JOIN Payment p ON p.trip_id = t.trip_id
-  WHERE t.status = 'completed' AND p.pay_id IS NULL;
-\end{lstlisting}
-All three returned the same 1{,}442 rows and identical plans: full scan of \texttt{Trip} probed against the unique index on \texttt{Payment.trip\_id} (\texttt{eq\_ref}), with \texttt{Extra: Not exists; Using index} --- the optimizer rewrote both subquery forms into the same anti-join.
+One question --- count completed trips without a payment row --- in three formulations: \texttt{NOT EXISTS}, \texttt{NOT IN} and \texttt{LEFT JOIN \ldots IS NULL} (statements verbatim in Appendix~\ref{app:expsql}).
+Each returned a single result row with the same count, 1{,}442, under identical plans: a full scan of \texttt{Trip} probed against the unique index on \texttt{Payment.trip\_id} (\texttt{eq\_ref}), with \texttt{Extra: Not exists; Using index} --- the optimizer rewrote both subquery forms into the same anti-join.
 
 \begin{table}[h]
 \centering
@@ -92,7 +68,7 @@ Step & Session A & Session B \\
 \end{tabular}
 
 \vspace{4pt}
-\noindent Result: 2 --- A's increment is lost (both UPDATEs reported ``1 row(s) affected''). With \texttt{SELECT \ldots FOR UPDATE} at step 1, B blocks at step 2 until A commits; B then reads the committed 3 (not the stale copy) and both increments survive ($2 \to 3 \to 4$). For the isolation-level comparison on row \texttt{trip\_id=150}: under REPEATABLE READ the transaction keeps seeing its snapshot (3 even after an external commit of 5); under READ COMMITTED it reads the latest committed value each time (5, then 3).
+\noindent Scenario 1 (lost update) ends at 2: A's increment is overwritten even though both UPDATEs reported ``1 row(s) affected''. Scenario 2 then reruns the demonstration with locking, on the same row and its leftover value of 2, this time with both sessions incrementing: A opens with \texttt{SELECT \ldots FOR UPDATE}, so B's locking read blocks until A commits (\texttt{rating = rating + 1} writes $2\to3$); released, B's locking read is a current read --- it sees the committed 3, not the stale snapshot --- and writes $3\to4$. Both increments survive, and nothing was reset by hand. A third, independent comparison on row \texttt{trip\_id=150} (initial value 3) contrasts isolation levels: under REPEATABLE READ the transaction keeps seeing its snapshot (still 3 after another session commits 5); under READ COMMITTED each read returns the latest committed value (5, then 3).
 
 \begin{table}[h]
 \centering
@@ -116,12 +92,12 @@ Rating out of 1--5 range  & \texttt{ERROR 3819} & CHECK constraint \\
 
 The last three rows also serve as evidence for G5: the constraints themselves stop illegal writes at the schema layer.
 
-\subsection{Distribution Check against the RideAustin Holdout}
-Generator parameters came from an 80/20 split of RideAustin by RIDE\_ID hash (deterministic, no temporal cut). We compared four marginal statistics against the held-out 20\%.
+\subsection{Descriptive Distribution Check against RideAustin}
+The generator's parameters were calibrated from full-dataset RideAustin statistics (Section~\ref{subsec:dataset}); no train/holdout split was used. Table~\ref{tab:holdout} is therefore a descriptive check that the generated sample reproduces the marginals it was calibrated against --- not an independent validation on held-out data. Methods: the RideAustin column uses all 1{,}494{,}125 rides (tier shares from \texttt{requested\_car\_category}; mean \texttt{total\_fare}; \texttt{driver\_rating} non-NULL share; 17--20h share computed from \texttt{created\_date} in US Central time), and the generated column uses the 60{,}000-trip sample (mean \texttt{Trip.fare} over the 49{,}200 completed trips; rating coverage over completed trips; 17--20h share over all trips by \texttt{start\_time}, the dispatch-acceptance timestamp). Results and field notes: \texttt{01\_docs/d5\_holdout\_comparison.md} in the repository.
 
 \begin{table}[h]
 \centering
-\caption{Generated sample vs.\ RideAustin holdout.}
+\caption{Generated sample vs.\ full-dataset RideAustin statistics.}
 \label{tab:holdout}
 \small
 \begin{tabular}{@{}lll@{}}
@@ -131,12 +107,12 @@ Dimension & RideAustin & Generated \\
 Tier mix (R/S/P/L) & 95.0 / 3.7 / 0.9 / 0.3\,\% & 95.1 / 3.7 / 0.9 / 0.3\,\% \\
 Mean fare (completed) & \$13.99 & \$14.00 ($\Delta$\,\$0.01) \\
 Rating coverage & $\approx$90.7\,\% & 89.9\,\% \\
-Evening peak 17--20h share & $\approx$20.5\,\% & 22.4\,\% \\
+Evening peak 17--20h share & $\approx$20.5\,\% & 20.5\,\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Percentage dimensions deviate by at most two percentage points; mean fare differs by one cent. What this checks is that several marginal statistics are close --- it does not validate the full joint distribution, long tails, or business-level external validity. Status mix, payment methods and the unpaid rate follow course-defined rules with no source counterpart.
+All four dimensions agree within one percentage point, and the mean fare within one cent. The check covers marginal statistics only --- not the joint distribution, long tails, or business-level external validity. Status mix, payment methods and the unpaid rate follow course-defined rules with no source counterpart.
 
 \subsection{Results Summary and Goal Recheck}
 % 2026-11-11 E 依组长意见1（删重复解释）压缩：本段与 §6.1 目标复核表逐句重复，

@@ -11,6 +11,8 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+% 2026-11-11 E 依 B 意见：正文换 Times 系字体（newtx = Times 文本+数学）
+\usepackage{newtxtext,newtxmath}
 \usepackage[a4paper,margin=2.5cm]{geometry}
 \usepackage{graphicx}
 \usepackage{booktabs}      % §5 结果表统一三线表
@@ -18,6 +20,9 @@
 \usepackage{listings}      % SQL/脚本排版
 \usepackage{xcolor}
 \usepackage{url}
+% 2026-11-11 E 依 B 意见：ER 图横版整页放大（1750x1060 源图纵排 16cm 时最小字仅约4pt）
+\usepackage{pdflscape}
+\usepackage{rotfloat}      % sidewaysfigure：附录 C 横版整页（免 lscape+float 组合的空白页）
 \usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
 
 % ---- 代码样式：等宽 9 号（组内约定）----
@@ -86,6 +91,7 @@
 \appendix
 \input{appendix_contribution}   % 附录 A 贡献表（E）
 \input{appendix_sql}            % 附录 B 完整脚本+查询清单（C 供、E 排版）
-\input{appendix_screens}        % 附录 C 查询结果截图（D 供图、E 排版，2026-11-10 压页增设）
+\input{appendix_er}             % 附录 C ER 图整页横版（B 供图；2026-11-11 E 增设）
+\input{appendix_screens}        % 附录 D 查询与实验结果截图（D 供图、E 排版，2026-11-10 压页增设）
 
 \end{document}
