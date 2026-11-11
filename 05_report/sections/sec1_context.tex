@@ -26,9 +26,26 @@ These requirements guide the relationships, integrity constraints and queries de
 \subsection{Goals and Constraints}
 \label{subsec:goals}
 
-The project defines five measurable goals. G1 requires at least 50{,}000 trips. G2 sets a P95 execution-time target below 200\,ms for the five high-frequency queries, Q6, Q1, Q5, Q2 and Q7. G3 proposes a provisional write-throughput target of approximately 50 transactions per second. G4 requires all completed but unpaid trips to be identified within 500\,ms. G5 requires zero orphan records and database-level rejection of writes that violate constraints.
+The project defines five goals, each with an associated verification method (Table~\ref{tab:goals}).
 
-These goals require different verification methods. Row-count checks establish sample size, while repeated execution of complete queries is needed to measure P95. Throughput testing requires a defined transaction workload, and reconciliation completeness requires an independently established set of expected trip identifiers. Constraint tests examine whether the database rejects invalid writes. The available evidence and outstanding tests are discussed in Sections~\ref{sec:eval} and~\ref{sec:conclusion}.
+\begin{table}[ht]
+\centering
+\caption{Design goals and verification methods}
+\label{tab:goals}
+\begin{tabular}{@{}p{2.3cm}p{5.0cm}p{7.0cm}@{}}
+\toprule
+Goal & Target & Verification \\
+\midrule
+G1 Sample size & At least 50{,}000 trips & Check row counts after import. \\
+G2 Query latency & Top-5 query P95 below 200\,ms & Repeatedly execute the complete queries. \\
+G3 Write throughput & Provisional target of 50 TPS & Define the transaction workload and conduct load tests. \\
+G4 Reconciliation & Identify all unpaid completed trips within 500\,ms & Compare returned trip IDs with an independent expected set and measure execution time. \\
+G5 Referential integrity & Zero orphan records and rejection of invalid writes & Check for orphan records and test constraint violations. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These are design targets. The Top-5 queries are Q6, Q1, Q5, Q2 and Q7. Section~\ref{sec:eval} reports the available evidence, and Section~\ref{sec:conclusion} reviews their achievement. G2 requires repeated query measurements, while G3 requires load testing before throughput can be confirmed.
 
 Dispatch and payment operations require consistent data, while customer-service queries require the latest trip status. Periodic reports can tolerate brief delays, making a read replica a possible future extension. The current implementation uses one MySQL instance. Other constraints include compatibility with MySQL 8.0.45, rebuilding within 30 minutes using fixed-seed repository scripts, and a proposed 180-day online retention policy with archival of older records.
 
