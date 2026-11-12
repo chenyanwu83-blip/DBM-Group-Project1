@@ -53,6 +53,8 @@ NOT IN is safe only when the subquery column is NOT NULL (\texttt{Payment.trip\_
 \subsection{Experiment 3: Concurrent Transactions}
 Two Workbench windows (separate connections) on the same database, row \texttt{trip\_id=92} of \texttt{trip\_detail}. The interleaving:
 
+% 2026-11-12 E：Times 下此表超宽 7.8pt，\small 收回
+{\small
 \begin{tabular}{@{}lll@{}}
 \toprule
 Step & Session A & Session B \\
@@ -66,8 +68,7 @@ Step & Session A & Session B \\
 5 & SELECT \ldots; -- reads 2 & \\
 \bottomrule
 \end{tabular}
-
-\vspace{4pt}
+}\vspace{4pt}
 \noindent Scenario 1 (lost update) ends at 2: A's increment is overwritten even though both UPDATEs reported ``1 row(s) affected''. Scenario 2 then reruns the demonstration with locking, on the same row and its leftover value of 2, this time with both sessions incrementing: A opens with \texttt{SELECT \ldots FOR UPDATE}, so B's locking read blocks until A commits (\texttt{rating = rating + 1} writes $2\to3$); released, B's locking read is a current read --- it sees the committed 3, not the stale snapshot --- and writes $3\to4$. Both increments survive, and nothing was reset by hand. A third, independent comparison on row \texttt{trip\_id=150} (initial value 3) contrasts isolation levels: under REPEATABLE READ the transaction keeps seeing its snapshot (still 3 after another session commits 5); under READ COMMITTED each read returns the latest committed value (5, then 3).
 
 \begin{table}[h]

@@ -36,7 +36,9 @@ Table~\ref{tab:constraints} maps each ER cardinality to the constraint that enfo
 \centering
 \caption{ER cardinalities and their SQL enforcement (\texttt{build.sql}).}
 \label{tab:constraints}
-\begin{tabular}{@{}lll@{}}
+\small
+% 2026-11-12 E：Times 正文字宽增大后 lll 整行超宽 46pt——Constraint 列改 p{} 可换行
+\begin{tabular}{@{}lp{7.2cm}l@{}}
 \toprule
 Relationship & Constraint & Cardinality \\
 \midrule
@@ -72,6 +74,8 @@ Table~\ref{tab:rows} lists the resulting row counts.
 \centering
 \caption{Row counts after a clean rebuild and import (\texttt{seed=534}).}
 \label{tab:rows}
+\small
+% 2026-11-12 E：九列计数表 Times 下超宽 23pt，\small 收回
 \begin{tabular}{@{}lcccccccc@{}}
 \toprule
  & Passenger & Vehicle & Driver & Trip & Payment & service\_tier & pickup\_zone & trip\_detail \\
@@ -84,8 +88,8 @@ Rows & 3{,}000 & 150 & 150 & 60{,}000 & 51{,}398 & 4 & 15 & 60{,}000 \\
 \subsection{Verification}
 \label{sec:verify}
 Acceptance was defined as a clean-room procedure: drop the schema, run \texttt{build.sql}, import
-\texttt{data\_import.sql}, then execute the twelve-statement acceptance script
-\texttt{02\_sql/c5\_check.sql}. It re-derives the eight table counts of Table~\ref{tab:rows}, runs
+\texttt{data\_import.sql}, then execute the acceptance script
+\texttt{02\_sql/c5\_check.sql} (twelve statements). It re-derives the eight table counts of Table~\ref{tab:rows}, runs
 zero-anomaly checks (no orphaned foreign keys, no trip without an extension row, no payment for a
 non-existent trip), and spot-checks business queries against pre-computed expected values: the first
 Q1 row (trip~1, Justin Lewis, fare 8.33, cash), exactly 150 drivers with completed-unpaid trips

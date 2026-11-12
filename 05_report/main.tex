@@ -42,6 +42,10 @@
 % ---- 图片：截图统一裁边、同比例缩放；源文件在 03_data/screenshots/ ----
 \graphicspath{{figures/}}
 
+% 2026-11-12 E：Times 正文比旧 CM 字宽，等宽 \texttt 标识符不可断行会戳出右界
+% （B/C 均未容忍 Overfull）。emergencystretch 允许问题行增加词间距兜底。
+\emergencystretch=2em
+
 \begin{document}
 
 % ================= 封面 =================
