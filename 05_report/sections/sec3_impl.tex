@@ -94,10 +94,7 @@ zero-anomaly checks (no orphaned foreign keys, no trip without an extension row,
 non-existent trip), and spot-checks business queries against pre-computed expected values: the first
 Q1 row (trip~1, Justin Lewis, fare 8.33, cash), exactly 150 drivers with completed-unpaid trips
 (Q2), and the four-tier aggregate of q10. Every check passed with observed values identical to
-expected. Evidence is captured per the screenshot specification: 21 verification screenshots
-(2026-11-01) --- structure and row count for each of the eight tables, the row-count summary
-(Fig.~\ref{fig:rowcounts}, Appendix~\ref{app:screens}), and four query spot-checks --- plus the ten
-query-result screenshots referenced in Section~\ref{sec:sql}. The procedure simultaneously closes
+expected. Evidence: 21 verification screenshots (2026-11-01) --- structure and row counts for each of the eight tables, the row-count summary (Fig.~\ref{fig:rowcounts}, Appendix~\ref{app:screens}), and four query spot-checks --- plus the ten query-result screenshots of Section~\ref{sec:sql}. The procedure simultaneously closes
 goal G1 (60{,}000 trips $\geq$ 50{,}000) and demonstrates goal G5 (constraint enforcement;
 error-code demonstrations appear with the experiments in Section~\ref{sec:eval}).
 

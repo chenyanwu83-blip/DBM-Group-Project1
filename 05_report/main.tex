@@ -20,9 +20,9 @@
 \usepackage{listings}      % SQL/脚本排版
 \usepackage{xcolor}
 \usepackage{url}
-% 2026-11-11 E 依 B 意见：ER 图横版整页放大（1750x1060 源图纵排 16cm 时最小字仅约4pt）
-\usepackage{pdflscape}
-\usepackage{rotfloat}      % sidewaysfigure：附录 C 横版整页（免 lscape+float 组合的空白页）
+% 2026-11-12 E：ER 图回内联后正文需再收 ~0.3 页——紧凑标题间距（不改字号/行距）
+\usepackage[compact]{titlesec}
+% 2026-11-12 E 依用户指示回退：撤销 pdflscape/rotfloat，ER 图恢复 §2.1 内联竖排
 \usepackage[colorlinks=true,linkcolor=blue,urlcolor=blue,citecolor=blue]{hyperref}
 
 % ---- 代码样式：等宽 9 号（组内约定）----
@@ -89,13 +89,13 @@
 % 未被引 2 条：mysql80（宜由 §3 引）、nycterms（宜随 §1.4 TLC 处引）——通读时由 A/C 就近补 \cite 或确认删除
 \bibliographystyle{plain}
 % 2026-11-11 E：参考文献 \small + bib 注释精简——正文压页收口（refs 曾溢出 13 行至 p15）
-{\small\bibliography{references}}
+% 2026-11-12 E：ER 图回内联后 refs 再收一档 \footnotesize，References 回 p13
+{\footnotesize\bibliography{references}}
 
 % ================= 附录 =================
 \appendix
 \input{appendix_contribution}   % 附录 A 贡献表（E）
 \input{appendix_sql}            % 附录 B 完整脚本+查询清单（C 供、E 排版）
-\input{appendix_er}             % 附录 C ER 图整页横版（B 供图；2026-11-11 E 增设）
-\input{appendix_screens}        % 附录 D 查询与实验结果截图（D 供图、E 排版，2026-11-10 压页增设）
+\input{appendix_screens}        % 附录 C 查询与实验结果截图（D 供图、E 排版，2026-11-10 压页增设）
 
 \end{document}

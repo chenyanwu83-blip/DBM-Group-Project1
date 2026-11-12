@@ -1,0 +1,47 @@
+\contentsline {section}{\numberline {1}Business Context and Goals}{2}{section.1}%
+\contentsline {subsection}{\numberline {1.1}Business Context}{2}{subsection.1.1}%
+\contentsline {subsection}{\numberline {1.2}Stakeholder Requirements}{2}{subsection.1.2}%
+\contentsline {subsection}{\numberline {1.3}Goals and Constraints}{2}{subsection.1.3}%
+\contentsline {subsection}{\numberline {1.4}Dataset Selection}{3}{subsection.1.4}%
+\contentsline {section}{\numberline {2}Entity-Relationship Model}{3}{section.2}%
+\contentsline {subsection}{\numberline {2.1}ER Diagram and Notation}{3}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}The Five Base Tables}{3}{subsection.2.2}%
+\contentsline {subsection}{\numberline {2.3}The Three Extension Tables}{3}{subsection.2.3}%
+\contentsline {subsection}{\numberline {2.4}Normalization}{4}{subsection.2.4}%
+\contentsline {section}{\numberline {3}Implementation}{4}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Environment and Architecture}{5}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}DDL Organisation and Key Constraints}{5}{subsection.3.2}%
+\contentsline {subsection}{\numberline {3.3}Data Generation and Import}{5}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}Verification}{6}{subsection.3.4}%
+\contentsline {section}{\numberline {4}SQL Queries and Conceptual Q\&A}{6}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Business Queries}{6}{subsection.4.1}%
+\contentsline {paragraph}{Q1--Q2: Payment reconciliation and collections.}{6}{paragraph*.1}%
+\contentsline {paragraph}{Q3--Q4: Revenue by vehicle and by driver-day.}{6}{paragraph*.2}%
+\contentsline {paragraph}{Q5--Q6: Collections exposure and dispatch planning.}{6}{paragraph*.3}%
+\contentsline {paragraph}{Q7--Q8: Trends and retention.}{6}{paragraph*.4}%
+\contentsline {paragraph}{Q9--Q10: Spatial and product-line views from the extension tables.}{7}{paragraph*.5}%
+\contentsline {subsection}{\numberline {4.2}Conceptual Q\&A}{7}{subsection.4.2}%
+\contentsline {paragraph}{Q1: Primary key vs.\ foreign key.}{7}{paragraph*.6}%
+\contentsline {paragraph}{Q2: 1NF, 2NF and 3NF.}{7}{paragraph*.7}%
+\contentsline {paragraph}{Q3: INNER, LEFT and RIGHT JOIN.}{7}{paragraph*.8}%
+\contentsline {paragraph}{Q4: Subquery vs.\ JOIN.}{7}{paragraph*.9}%
+\contentsline {paragraph}{Q5: ACID and concurrent payments.}{8}{paragraph*.10}%
+\contentsline {paragraph}{Q6: Indexes and B+ trees.}{8}{paragraph*.11}%
+\contentsline {paragraph}{Q7: GROUP BY, HAVING vs.\ WHERE.}{8}{paragraph*.12}%
+\contentsline {paragraph}{Q8: VIEW vs.\ STORED PROCEDURE.}{8}{paragraph*.13}%
+\contentsline {section}{\numberline {5}Evaluation}{9}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Test Environment}{9}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Experiment 1: Index Before/After}{9}{subsection.5.2}%
+\contentsline {subsection}{\numberline {5.3}Experiment 2: JOIN vs Subquery}{9}{subsection.5.3}%
+\contentsline {subsection}{\numberline {5.4}Experiment 3: Concurrent Transactions}{10}{subsection.5.4}%
+\contentsline {subsection}{\numberline {5.5}Descriptive Distribution Check against RideAustin}{10}{subsection.5.5}%
+\contentsline {subsection}{\numberline {5.6}Results Summary and Goal Recheck}{11}{subsection.5.6}%
+\contentsline {section}{\numberline {6}Conclusion and Limitations}{11}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Goal Recheck}{11}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Limitations}{11}{subsection.6.2}%
+\contentsline {subsection}{\numberline {6.3}Future Work}{12}{subsection.6.3}%
+\contentsline {section}{\numberline {A}Contribution Statement}{13}{appendix.A}%
+\contentsline {section}{\numberline {B}Full Build Script and Query Listings}{13}{appendix.B}%
+\contentsline {subsection}{\numberline {B.1}Query Listings}{17}{subsection.B.1}%
+\contentsline {subsection}{\numberline {B.2}Experiment Statements}{19}{subsection.B.2}%
+\contentsline {section}{\numberline {C}Execution and Result Screenshots}{20}{appendix.C}%

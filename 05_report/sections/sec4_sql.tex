@@ -17,19 +17,19 @@
 Ten queries answer the workload, all executed on the 60{,}000-trip sample. All ten statements are shown exactly as executed in MySQL Workbench, together with their result sets, in Appendix~\ref{app:screens}; the exact SQL text, verbatim from \texttt{02\_sql/queries/}, is collected in Appendix~\ref{app:queries}.
 
 \paragraph{Q1--Q2: Payment reconciliation and collections.}
-Q1 pairs every completed trip with its payment via the UNIQUE \texttt{trip\_id} join --- \texttt{fare} equals \texttt{amount} row by row (47{,}758 rows; balance is the most common method at 45\%, cash 30\%, card 25\%). Q2 flips the join into a \texttt{NOT EXISTS} anti-join to find drivers with uncollected fares: all 150 drivers, 1{,}442 trips. Cancelled trips carrying the \$1.50 fee already have a Payment row, so they stay off the list. (Screenshots: Appendix~\ref{app:screens}.)
+Q1 pairs every completed trip with its payment via the UNIQUE \texttt{trip\_id} join --- \texttt{fare} equals \texttt{amount} row by row (47{,}758 rows; balance is the most common method at 45\%, cash 30\%, card 25\%). Q2 flips the join into a \texttt{NOT EXISTS} anti-join to find drivers with uncollected fares: all 150 drivers, 1{,}442 trips. Cancelled trips carrying the \$1.50 fee already have a Payment row, so they stay off the list.
 
 \paragraph{Q3--Q4: Revenue by vehicle and by driver-day.}
-Q3 aggregates listed trip fares across \texttt{Vehicle}$\to$\allowbreak\texttt{Driver}$\to$\allowbreak\texttt{Trip} (fare is the sticker price, not cash collected); the distribution is balanced, with head vehicles at 435--445 trips versus a fleet average of 400. Q4 groups completed trips by driver and day, then ranks by total fare --- the top driver-day totals \$158.92. Note that SUM(fare) measures listed prices rather than driver take-home pay. (Screenshots: Appendix~\ref{app:screens}.)
+Q3 aggregates listed trip fares across \texttt{Vehicle}$\to$\allowbreak\texttt{Driver}$\to$\allowbreak\texttt{Trip} (fare is the sticker price, not cash collected); the distribution is balanced, with head vehicles at 435--445 trips versus a fleet average of 400. Q4 groups completed trips by driver and day, then ranks by total fare --- the top driver-day totals \$158.92. Note that SUM(fare) measures listed prices rather than driver take-home pay.
 
 \paragraph{Q5--Q6: Collections exposure and dispatch planning.}
-Q5 finds completed-but-unpaid trips where more than 24 hours have passed since \emph{dispatch acceptance} (\texttt{start\_time}), not since completion or payment due date --- the model lacks those fields, so dispatch time is a rough proxy. All 1{,}442 qualify because the simulated history ends before load time. Q6 groups trips by hour and keeps hours above 2{,}000 trips with \texttt{HAVING}, something \texttt{WHERE} cannot do (16 of 24 hours survive); the evening block 17:00--20:00 carries 20.5\% of volume (12{,}299 of 60{,}000 trips) in the generated sample. (Screenshots: Appendix~\ref{app:screens}.)
+Q5 finds completed-but-unpaid trips where more than 24 hours have passed since \emph{dispatch acceptance} (\texttt{start\_time}), not since completion or payment due date --- the model lacks those fields, so dispatch time is a rough proxy. All 1{,}442 qualify because the simulated history ends before load time. Q6 groups trips by hour and keeps hours above 2{,}000 trips with \texttt{HAVING}, something \texttt{WHERE} cannot do (16 of 24 hours survive); the evening block 17:00--20:00 carries 20.5\% of volume (12{,}299 of 60{,}000 trips) in the generated sample.
 
 \paragraph{Q7--Q8: Trends and retention.}
-Q7 joins recorded payment amounts to trip dispatch months (grouped by when the trip was accepted, not when payment was recorded): the result spans thirteen calendar months --- the two boundary months are partial --- and the twelve full months (2025-11 to 2026-09) vary between \$52.4k and \$57.9k with no seasonal pattern, a property of the generated sample rather than evidence about real growth. Q8 keeps passengers active on two or more distinct days (accepted-trip activity: the query has no status filter) --- all 3{,}000 passengers qualify, and the heaviest rides 36 trips across 36 distinct days. (Screenshots: Appendix~\ref{app:screens}.)
+Q7 joins recorded payment amounts to trip dispatch months (grouped by when the trip was accepted, not when payment was recorded): the result spans thirteen calendar months --- the two boundary months are partial --- and the twelve full months (2025-11 to 2026-09) vary between \$52.4k and \$57.9k with no seasonal pattern, a property of the generated sample rather than evidence about real growth. Q8 keeps passengers active on two or more distinct days (accepted-trip activity: the query has no status filter) --- all 3{,}000 passengers qualify, and the heaviest rides 36 trips across 36 distinct days.
 
 \paragraph{Q9--Q10: Spatial and product-line views from the extension tables.}
-Q9 joins through \texttt{trip\_detail} to \texttt{pickup\_zone}: the top three zones absorb 35.0\% of accepted trips --- Downtown and East Austin 7{,}200 each (12.0\% apiece) and South Congress 6{,}600 (11.0\%) --- matching the course-assumed zone concentration. This counts accepted trips only --- requests without a driver are outside the data. Q10 joins to \texttt{service\_tier} and uses \texttt{COUNT(rating)} for coverage (NULL-skipping, reported as a share of completed trips) and \texttt{AVG(rating)} for the mean: average fares climb from \$13.40 (REGULAR) to \$35.95 (LUXURY), about 2.7$\times$, while average ratings stay in a narrow 4.75--4.86 band at roughly 90\% coverage --- statistics of the generated sample, not evidence that premium products monetize without hurting satisfaction. (Screenshots: Appendix~\ref{app:screens}.)
+Q9 joins through \texttt{trip\_detail} to \texttt{pickup\_zone}: the top three zones absorb 35.0\% of accepted trips --- Downtown and East Austin 7{,}200 each (12.0\% apiece) and South Congress 6{,}600 (11.0\%) --- matching the course-assumed zone concentration. This counts accepted trips only --- requests without a driver are outside the data. Q10 joins to \texttt{service\_tier} and uses \texttt{COUNT(rating)} for coverage (NULL-skipping, reported as a share of completed trips) and \texttt{AVG(rating)} for the mean: average fares climb from \$13.40 (REGULAR) to \$35.95 (LUXURY), about 2.7$\times$, while average ratings stay in a narrow 4.75--4.86 band at roughly 90\% coverage --- statistics of the generated sample, not evidence that premium products monetize without hurting satisfaction.
 
 \subsection{Conceptual Q\&A}
 
@@ -43,23 +43,34 @@ A primary key is NOT NULL and UNIQUE and acts as the address of a row (\texttt{P
 INNER JOIN keeps only matching rows; LEFT JOIN keeps every left-table row, filling unmatched right columns with NULL; RIGHT JOIN is the mirror image, keeping every right-table row and filling unmatched left columns with NULL. LEFT JOIN is mandatory when zero-trip drivers must appear in a per-driver report --- INNER JOIN would drop them silently. The status filter goes in the ON clause (in WHERE it degenerates the join back to INNER), and the count uses \texttt{COUNT(t.trip\_id)} instead of \texttt{COUNT(*)} so unmatched drivers read 0, not 1.
 
 \paragraph{Q4: Subquery vs.\ JOIN.}
-``Who has an accepted trip in the PREMIUM tier?'' (the query spans all statuses; adding a \texttt{completed} filter would restrict it to finished rides). With a JOIN:
-\begin{lstlisting}[language=SQL]
+``Who has an accepted trip in the PREMIUM tier?'' (the query spans all statuses; adding a \texttt{completed} filter would restrict it to finished rides). With a JOIN (left) and a subquery (right):
+% 2026-11-12 E：两清单并排省约 1/3 页（ER 图回内联后正文需找页）；
+%   行号按 B.2 完整清单可查，此处 numbers=none
+\noindent
+\begin{minipage}[t]{0.487\textwidth}
+\centering\small\itshape JOIN form
+\begin{lstlisting}[language=SQL,numbers=none]
 SELECT DISTINCT p.psg_id, p.name
 FROM Passenger p
   JOIN Trip t ON t.psg_id = p.psg_id
   JOIN trip_detail td ON td.trip_id = t.trip_id
-  JOIN service_tier st ON st.tier_id = td.service_tier_id
+  JOIN service_tier st ON st.tier_id =
+      td.service_tier_id
 WHERE st.name = 'PREMIUM';
 \end{lstlisting}
-With a subquery:
-\begin{lstlisting}[language=SQL]
+\end{minipage}\hfill
+\begin{minipage}[t]{0.487\textwidth}
+\centering\small\itshape Subquery form
+\begin{lstlisting}[language=SQL,numbers=none]
 SELECT psg_id, name FROM Passenger
 WHERE psg_id IN (SELECT t.psg_id FROM Trip t
-    JOIN trip_detail td ON td.trip_id = t.trip_id
-    JOIN service_tier st ON st.tier_id = td.service_tier_id
+    JOIN trip_detail td ON td.trip_id =
+        t.trip_id
+    JOIN service_tier st ON st.tier_id =
+        td.service_tier_id
     WHERE st.name = 'PREMIUM');
 \end{lstlisting}
+\end{minipage}
 Both return the same 489 passengers. Neither form is inherently faster: performance depends on the execution plan, indexes and selectivity, not on syntax. EXPLAINing both on our dataset shows why --- MySQL rewrites the IN-subquery into a semi-join~\cite{mysql80}, and the two plans walk the same tables in the same order (\texttt{service\_tier} by unique key, \texttt{trip\_detail} by index, then \texttt{Trip} and \texttt{Passenger} by primary key), differing only in how duplicates are removed (\texttt{DISTINCT} via a temporary table vs.\ semijoin materialisation). NOT IN is unsafe when the subquery column can be NULL; \texttt{Payment.trip\_id} is NOT NULL.
 
 \paragraph{Q5: ACID and concurrent payments.}

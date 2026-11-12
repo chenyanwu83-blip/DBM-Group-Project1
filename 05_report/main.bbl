@@ -1,0 +1,48 @@
+\begin{thebibliography}{1}
+
+\bibitem{cds534requirement}
+{CDS 534 Teaching Team}.
+\newblock Cds 534 database management group project requirement.
+\newblock Course handout, 16 pp. (group shared drive), 2026.
+
+\bibitem{tlctripdata}
+{New York City Taxi and Limousine Commission}.
+\newblock Tlc trip record data.
+\newblock \url{https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page},
+  2026.
+\newblock Accessed 2026-10-22; distributional reference only.
+
+\bibitem{mysql80}
+{Oracle Corporation}.
+\newblock Mysql 8.0 reference manual.
+\newblock \url{https://dev.mysql.com/doc/refman/8.0/en/}, 2026.
+\newblock Accessed 2026-10-22.
+
+\bibitem{uberengmysql}
+{Uber Engineering}.
+\newblock Why uber engineering switched from postgres to mysql.
+\newblock Uber Engineering Blog,
+  \url{https://eng.uber.com/postgres-to-mysql-migration/}, 2016.
+\newblock Source 2 of the A1 business-flow memo (2026-10-22);
+  durable-transaction record practice cited in Section 1.
+
+\bibitem{ubercancelfee}
+{Uber Technologies}.
+\newblock Am i charged for cancelling a trip? (uber help).
+\newblock
+  \url{https://help.uber.com/en/riders/article/am-i-charged-for-cancelling-a-trip-?nodeId=5f6415dc-dfdb-4d64-927a-66bb06bc4f82},
+  2026.
+\newblock Accessed 2026-10-22. Real grace period and fee vary by city; our
+  course simplification is a flat USD 1.50 fee (decision D-06).
+
+\bibitem{zuniga2020rideaustin}
+Natalia Zuniga-Garcia, Natalia Ruiz~Juri, Randy Machemehl, James Scott, and
+  Mauricio Tec.
+\newblock Evaluation of ride-sourcing search frictions and driver productivity:
+  A spatial denoising approach.
+\newblock {\em Transportation Research Part C: Emerging Technologies}, 2019.
+\newblock RideAustin rides dataset (Mendeley Data, doi 10.17632/wp5gkjbvb9.1):
+  approx.\ 1.49M trips, 2016-06-02 -- 2017-04-13, CC0 1.0; calibration source
+  for the synthetic generator (decision D-10). Accessed 2026-10-22.
+
+\end{thebibliography}
