@@ -7,9 +7,11 @@
 \section{Conceptual ER Diagram (Chen Notation)}
 \label{app:erchen}
 
+Figure~\ref{fig:er-chen} presents the conceptual view corresponding to the implementation-level diagram of Section~\ref{sec:er}. Reading it against the schema: \texttt{trip\_detail} is a weak entity --- its identifier is \texttt{trip\_id}, inherited from \texttt{Trip} through the identifying relationship \texttt{has\_detail}, and it cannot exist without its parent trip. In the relational schema this becomes a primary key that is also a foreign key. Total participation (double lines) marks dependencies that hold for every row: every driver is assigned to exactly one vehicle, every trip has exactly one passenger and one driver, and every detail row belongs to a trip. Partial participation (single line) marks the optional sides: a trip has a payment only when charging applies (\texttt{has\_payment}, $0..1$), and a trip carries a detail row for every generated trip --- enforced by the generator rather than by DDL (\texttt{has\_detail}, $0..1$ on the Trip side). The two dimension relationships, \texttt{classifies} (service tier) and \texttt{picks\_up\_in} (pickup zone), are N:1 lookups realised as foreign keys with seeded reference tables.
+
 \begin{figure}[H]
   \centering
   \includegraphics[width=\textwidth]{er_chen.pdf}
-  \caption{The model of Figure~\ref{fig:er-final} in Chen notation: entities and relationships with cardinalities, the weak entity \texttt{trip\_detail} (double border) with its identifying relationship \texttt{HAS\_DETAIL}, and participation constraints drawn as double lines (total). The cardinalities agree with the implementation view and with the constraints enforced in \texttt{build.sql}.}
+  \caption{The model of Figure~\ref{fig:er-final} in Chen notation: entities and relationships with cardinalities, the weak entity \texttt{trip\_detail} (double border) with its identifying relationship \texttt{has\_detail}, and participation constraints drawn as double lines (total). The cardinalities agree with the implementation view and with the constraints enforced in \texttt{build.sql}.}
   \label{fig:er-chen}
 \end{figure}
