@@ -89,12 +89,10 @@ Rows & 3{,}000 & 150 & 150 & 60{,}000 & 51{,}398 & 4 & 15 & 60{,}000 \\
 \label{sec:verify}
 Acceptance was defined as a clean-room procedure: drop the schema, run \texttt{build.sql}, import
 \texttt{data\_import.sql}, then execute the acceptance script
-\texttt{02\_sql/c5\_check.sql} (twelve statements). It re-derives the eight table counts of Table~\ref{tab:rows}, runs
-zero-anomaly checks (no orphaned foreign keys, no trip without an extension row, no payment for a
-non-existent trip), and spot-checks business queries against pre-computed expected values: the first
+\texttt{02\_sql/c5\_check.sql} (twelve statements). It checks the eight table counts of Table~\ref{tab:rows}, missing trip-detail rows and selected
+business-rule violations, and compares query results with pre-computed expected values: the first
 Q1 row (trip~1, Justin Lewis, fare 8.33, cash), exactly 150 drivers with completed-unpaid trips
-(Q2), and the four-tier aggregate of q10. Every check passed with observed values identical to
-expected. Evidence: 21 verification screenshots (2026-11-01) --- structure and row counts for each of the eight tables, the row-count summary (Fig.~\ref{fig:rowcounts}, Appendix~\ref{app:screens}), and four query spot-checks --- plus the ten query-result screenshots of Section~\ref{sec:sql}. The procedure simultaneously closes
+(Q2), and the four-tier aggregate of q10. All checks included in this acceptance procedure passed with the expected results. Full-database orphan-check results are not presented in this report. Evidence: 21 verification screenshots (2026-11-01) --- structure and row counts for each of the eight tables, the row-count summary (Fig.~\ref{fig:rowcounts}, Appendix~\ref{app:screens}), and four query spot-checks --- plus the ten query-result screenshots of Section~\ref{sec:sql}. The procedure simultaneously closes
 goal G1 (60{,}000 trips $\geq$ 50{,}000) and demonstrates goal G5 (constraint enforcement;
 error-code demonstrations appear with the experiments in Section~\ref{sec:eval}).
 

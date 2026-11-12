@@ -30,7 +30,7 @@ Wrapping the indexed column in a function (\texttt{DATE(start\_time) = ...}) deg
 
 \subsection{Experiment 2: JOIN vs Subquery}
 One question --- count completed trips without a payment row --- in three formulations: \texttt{NOT EXISTS}, \texttt{NOT IN} and \texttt{LEFT JOIN \ldots IS NULL} (statements verbatim in Appendix~\ref{app:expsql}).
-Each returned a single result row with the same count, 1{,}442, under identical plans: a full scan of \texttt{Trip} probed against the unique index on \texttt{Payment.trip\_id} (\texttt{eq\_ref}), with \texttt{Extra: Not exists; Using index} --- the optimizer rewrote both subquery forms into the same anti-join.
+Each query returned one row with a count of 1{,}442. The plans show similar access patterns, namely scanning \texttt{Trip} and probing the unique index on \texttt{Payment.trip\_id}. Both subquery forms have the same reported plan signature; the LEFT JOIN form differs slightly in \texttt{filtered}.
 
 \begin{table}[h]
 \centering
