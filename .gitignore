@@ -20,3 +20,11 @@ __pycache__/
 
 # R 会话残留
 .Rhistory
+
+# LaTeX 编译中间文件（tectonic --keep-intermediates 产物）
+05_report/main.aux
+05_report/main.bbl
+05_report/main.blg
+05_report/main.out
+05_report/main.toc
+05_report/main.log
