@@ -44,9 +44,14 @@ INNER JOIN keeps only matching rows; LEFT JOIN keeps every left-table row, filli
 
 \paragraph{Q4: Subquery vs.\ JOIN.}
 ``Who has an accepted trip in the PREMIUM tier?'' (the query spans all statuses; adding a \texttt{completed} filter would restrict it to finished rides). With a JOIN (left) and a subquery (right):
+
 % 2026-11-12 E：两清单并排省约 1/3 页（ER 图回内联后正文需找页）；
-%   行号按 B.2 完整清单可查，此处 numbers=none
+%   行号按 B.2 完整清单可查，此处 numbers=none。
+% 2026-11-12 E 二修：外层 minipage 把两清单锁成不可断整体——此前两块间的
+%   \hfill 胶水允许分页，出现 JOIN form 在 p8 底 / Subquery form 在 p9 顶
+%   的跨页分家（用户目检发现）
 \noindent
+\begin{minipage}{\textwidth}
 \begin{minipage}[t]{0.487\textwidth}
 \centering\small\itshape JOIN form
 \begin{lstlisting}[language=SQL,numbers=none]
@@ -70,6 +75,7 @@ WHERE psg_id IN (SELECT t.psg_id FROM Trip t
         td.service_tier_id
     WHERE st.name = 'PREMIUM');
 \end{lstlisting}
+\end{minipage}
 \end{minipage}
 Both return the same 489 passengers. Neither form is inherently faster: performance depends on the execution plan, indexes and selectivity, not on syntax. EXPLAINing both on our dataset shows why --- MySQL rewrites the IN-subquery into a semi-join~\cite{mysql80}, and the two plans walk the same tables in the same order (\texttt{service\_tier} by unique key, \texttt{trip\_detail} by index, then \texttt{Trip} and \texttt{Passenger} by primary key), differing only in how duplicates are removed (\texttt{DISTINCT} via a temporary table vs.\ semijoin materialisation). NOT IN is unsafe when the subquery column can be NULL; \texttt{Payment.trip\_id} is NOT NULL.
 
