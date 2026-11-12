@@ -1,0 +1,15 @@
+% ============================================================
+% 附录 D Chen 概念 ER 图 — 2026-11-12 组员双图方案增设
+% 主图（§2.1 Figure 1，表结构视图）供老师对照 DDL/SQL；本图为同一模型的
+% Chen 记法概念视图（实体/关系/弱实体/参与约束）。源文件 04_figures/er_chen.pdf。
+% 两图关系口径一致（7 个关系全部对应 build.sql 约束，已由 E 核对）。
+% ============================================================
+\section{Conceptual ER Diagram (Chen Notation)}
+\label{app:erchen}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=\textwidth]{er_chen.pdf}
+  \caption{The model of Figure~\ref{fig:er-final} in Chen notation: entities and relationships with cardinalities, the weak entity \texttt{trip\_detail} (double border) with its identifying relationship \texttt{HAS\_DETAIL}, and participation constraints drawn as double lines (total). The cardinalities agree with the implementation view and with the constraints enforced in \texttt{build.sql}.}
+  \label{fig:er-chen}
+\end{figure}
